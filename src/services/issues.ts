@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { CreateIssueInput, Issue, IssuePhoto, IssueStatus, IssueType, Ward } from "../types";
+import type { CreateIssueInput, Issue, IssuePhoto, IssueStatus, IssueType, PublicCommunication, Ward } from "../types";
 
 export interface IssueFilters {
   status?: IssueStatus | "All";
@@ -55,7 +55,7 @@ export async function getIssues(filters: IssueFilters): Promise<Issue[]> {
   return (data as unknown as Issue[]).map(withPhotoUrls);
 }
 
-export async function getIssue(issueNumber: string): Promise<Issue> {
+export async function getLatestIssue(): Promise<Issue | null> {
   const { data, error } = await supabase
     .from("issues")
     .select(`
@@ -63,11 +63,38 @@ export async function getIssue(issueNumber: string): Promise<Issue> {
       latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
       issue_types(id,name), wards(name), issue_photos(id,storage_path)
     `)
-    .eq("issue_number", issueNumber)
-    .single();
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (error) throw error;
-  return withPhotoUrls(data as unknown as Issue);
+  return data ? withPhotoUrls(data as unknown as Issue) : null;
+}
+
+export async function getIssue(issueNumber: string): Promise<Issue> {
+  const [issueResult, communicationsResult] = await Promise.all([
+    supabase
+      .from("issues")
+      .select(`
+        id, issue_number, title, description, street_address, nearest_intersection,
+        latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
+        issue_types(id,name), wards(name), issue_photos(id,storage_path)
+      `)
+      .eq("issue_number", issueNumber)
+      .single(),
+    supabase
+      .from("public_issue_communications")
+      .select("id,communication_type,recipient_email,subject,body,delivery_status,sent_at,created_at")
+      .eq("issue_number", issueNumber)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  if (issueResult.error) throw issueResult.error;
+  if (communicationsResult.error) throw communicationsResult.error;
+  return withPhotoUrls({
+    ...(issueResult.data as unknown as Issue),
+    communications: communicationsResult.data as PublicCommunication[],
+  });
 }
 
 export async function createIssue(input: CreateIssueInput): Promise<Issue> {
@@ -84,7 +111,6 @@ export async function createIssue(input: CreateIssueInput): Promise<Issue> {
       longitude: input.longitude ?? null,
       reporter_name: input.reporterName || null,
       reporter_email: input.reporterEmail || null,
-      reporter_mobile: input.reporterMobile || null,
     })
     .select("id,issue_number")
     .single();

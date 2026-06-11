@@ -1,4 +1,4 @@
-# Ward 47 Civic Tracker
+# WardWorks
 
 A public municipal issue reporting and tracking application for Ward 47, Tshwane. Residents can log issues without creating an account, upload photographs, receive a public issue number, and follow progress.
 
@@ -75,7 +75,8 @@ Verify a sending domain in [Resend](https://resend.com), then configure secrets:
 ```bash
 supabase secrets set \
   RESEND_API_KEY=re_your_key \
-  RESEND_FROM_EMAIL="Ward 47 Civic Tracker <reports@your-domain.org>" \
+  RESEND_FROM_EMAIL="WardWorks <notifications@wardworks.co.za>" \
+  EMAIL_DELIVERY_ENABLED=false \
   CRON_SECRET=REPLACE_WITH_THE_SAME_LONG_RANDOM_VALUE
 ```
 
@@ -89,6 +90,8 @@ supabase functions deploy send-followups --no-verify-jwt
 ```
 
 Notification delivery is deliberately asynchronous from the browser's perspective. A Resend failure is recorded in `communications`, but it does not roll back a resident's report.
+
+Set `EMAIL_DELIVERY_ENABLED=true` only when municipal delivery is ready for production.
 
 To test a follow-up run:
 

@@ -19,8 +19,7 @@ export function ReportsPage() {
     <div className="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16">
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-clay">Public register</p>
-          <h1 className="mt-2 font-display text-4xl font-bold text-civic-950 sm:text-5xl">Ward reports</h1>
+          <h1 className="font-display text-4xl font-bold text-civic-950 sm:text-5xl">Ward reports</h1>
           <p className="mt-3 max-w-xl text-stone-500">See what has been reported and follow each issue through to resolution.</p>
         </div>
         <Link to="/report" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-civic-900 px-5 text-sm font-bold text-white">

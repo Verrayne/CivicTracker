@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, LocateFixed, MapPin, ShieldCheck, X } from "lucide-react";
+import { Camera, Copy, LocateFixed, MapPin, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -19,14 +19,13 @@ const formSchema = z.object({
   wardId: z.string().min(1, "Ward is required"),
   issueTypeId: z.string().min(1, "Select an issue type"),
   title: z.string().trim().min(5, "Use at least 5 characters").max(120),
-  description: z.string().trim().min(20, "Please provide at least 20 characters").max(2000),
+  description: z.string().trim().min(5, "Please provide at least 5 characters").max(2000),
   streetAddress: z.string().trim().min(5, "Street address is required").max(250),
   nearestIntersection: z.string().trim().max(250).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   reporterName: z.string().trim().max(100).optional(),
   reporterEmail: z.union([z.literal(""), z.string().email("Enter a valid email")]).optional(),
-  reporterMobile: z.string().trim().max(30).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,11 +38,13 @@ export function ReportIssuePage() {
   const [photoError, setPhotoError] = useState("");
   const [locationError, setLocationError] = useState("");
   const [locating, setLocating] = useState(false);
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,10 +59,11 @@ export function ReportIssuePage() {
       longitude: undefined,
       reporterName: "",
       reporterEmail: "",
-      reporterMobile: "",
     },
     resetOptions: { keepDirtyValues: true },
   });
+  const title = watch("title");
+  const descriptionField = register("description");
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => createIssue({ ...values, photos }),
@@ -137,7 +139,29 @@ export function ReportIssuePage() {
               {issueTypes.data?.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
             </Select>
             <div className="sm:col-span-2"><Input label="Title" placeholder="e.g. Large pothole blocking left lane" error={errors.title?.message} {...register("title")} /></div>
-            <div className="sm:col-span-2"><Textarea label="Description" rows={6} placeholder="Describe the issue, visible hazards, landmarks and how long it has been present." error={errors.description?.message} {...register("description")} /></div>
+            <div className="relative sm:col-span-2">
+              <Textarea
+                label="Description"
+                rows={6}
+                placeholder="Describe the issue, visible hazards, landmarks and how long it has been present."
+                error={errors.description?.message}
+                {...descriptionField}
+                onFocus={() => setDescriptionFocused(true)}
+                onBlur={(event) => {
+                  descriptionField.onBlur(event);
+                  setDescriptionFocused(false);
+                }}
+              />
+              <button
+                type="button"
+                disabled={!descriptionFocused || !title.trim()}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setValue("description", title.trim(), { shouldDirty: true, shouldValidate: true })}
+                className="absolute right-2 top-0 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-bold text-civic-700 transition hover:bg-civic-50 disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy title
+              </button>
+            </div>
             <Input label="Street address" placeholder="Street number and name, suburb" error={errors.streetAddress?.message} {...register("streetAddress")} />
             <Input label="Nearest intersection" placeholder="Optional" error={errors.nearestIntersection?.message} {...register("nearestIntersection")} />
           </div>
@@ -182,12 +206,11 @@ export function ReportIssuePage() {
         <Card className="p-6 sm:p-8">
           <div className="mb-7 flex items-center gap-3 border-b pb-5">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-civic-50 text-civic-800"><ShieldCheck className="h-5 w-5" /></span>
-            <div><h2 className="font-display text-xl font-bold text-civic-950">Your details</h2><p className="text-sm text-stone-500">Optional. Contact details are not shown publicly.</p></div>
+            <div><h2 className="font-display text-xl font-bold text-civic-950">Your details</h2><p className="text-sm text-stone-500">Receive email updates on your issue. Contact details are not shown publicly.</p></div>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <Input label="Name" placeholder="Optional" error={errors.reporterName?.message} {...register("reporterName")} />
             <Input label="Email" type="email" placeholder="Optional" error={errors.reporterEmail?.message} {...register("reporterEmail")} />
-            <Input label="Mobile number" type="tel" placeholder="Optional" error={errors.reporterMobile?.message} {...register("reporterMobile")} />
           </div>
         </Card>
 

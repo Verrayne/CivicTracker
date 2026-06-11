@@ -20,10 +20,7 @@ export function Layout() {
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-civic-900 text-white">
               <MapPin className="h-5 w-5" />
             </span>
-            <span>
-              <strong className="block font-display text-lg leading-none text-civic-950">Ward 47</strong>
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-civic-700">Civic Tracker</span>
-            </span>
+            <strong className="font-display text-xl leading-none text-civic-950">WardWorks</strong>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((item) => (
@@ -65,7 +62,7 @@ export function Layout() {
       </main>
       <footer className="border-t border-civic-900/10 bg-civic-950 py-8 text-civic-100">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 text-sm sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <p>Ward 47 Civic Tracker · Tshwane</p>
+          <p>WardWorks © 2026</p>
           <p className="text-civic-300">Community reports are public. Do not include sensitive information.</p>
         </div>
       </footer>

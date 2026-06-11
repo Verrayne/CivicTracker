@@ -76,10 +76,17 @@ Deno.serve(async (request) => {
       .single();
     if (communicationError) throw communicationError;
 
+    if (Deno.env.get("EMAIL_DELIVERY_ENABLED") !== "true") {
+      console.log(`Email delivery disabled; retained pending communication ${communication.id}`);
+      return new Response(JSON.stringify({ success: true, deliveryEnabled: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     try {
       await sendEmail({
         apiKey: Deno.env.get("RESEND_API_KEY")!,
-        from: Deno.env.get("RESEND_FROM_EMAIL") || "Ward 47 Civic Tracker <reports@example.org>",
+        from: Deno.env.get("RESEND_FROM_EMAIL") || "WardWorks <notifications@wardworks.co.za>",
         to: recipient,
         subject,
         html,

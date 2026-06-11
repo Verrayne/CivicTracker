@@ -12,6 +12,11 @@ Deno.serve(async (request) => {
   if (request.headers.get("x-cron-secret") !== expectedSecret) {
     return new Response("Unauthorized", { status: 401, headers: corsHeaders });
   }
+  if (Deno.env.get("EMAIL_DELIVERY_ENABLED") !== "true") {
+    return new Response(JSON.stringify({ processed: 0, results: [], deliveryEnabled: false }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -57,7 +62,7 @@ Deno.serve(async (request) => {
       try {
         await sendEmail({
           apiKey: Deno.env.get("RESEND_API_KEY")!,
-          from: Deno.env.get("RESEND_FROM_EMAIL") || "Ward 47 Civic Tracker <reports@example.org>",
+          from: Deno.env.get("RESEND_FROM_EMAIL") || "WardWorks <notifications@wardworks.co.za>",
           to: recipient,
           subject,
           html,

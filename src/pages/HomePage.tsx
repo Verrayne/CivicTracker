@@ -1,5 +1,8 @@
+import { formatDistanceToNow } from "date-fns";
 import { ArrowRight, CheckCircle2, ClipboardList, MapPinned, Send } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Badge } from "../components/ui/Badge";
+import { useLatestIssue } from "../hooks/useIssues";
 
 const steps = [
   { icon: ClipboardList, number: "01", title: "Tell us what happened", text: "Add the location, issue details and up to five photos." },
@@ -8,6 +11,9 @@ const steps = [
 ];
 
 export function HomePage() {
+  const latestIssueQuery = useLatestIssue();
+  const latestIssue = latestIssueQuery.data;
+
   return (
     <>
       <section className="paper-grid relative overflow-hidden border-b border-civic-900/10">
@@ -15,7 +21,7 @@ export function HomePage() {
           <div className="relative z-10">
             <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-civic-900/15 bg-white/80 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.15em] text-civic-800">
               <span className="h-2 w-2 rounded-full bg-clay" />
-              Built for Ward 47, Tshwane
+              Currently in testing
             </p>
             <h1 className="max-w-3xl font-display text-5xl font-bold leading-[1.02] tracking-tight text-civic-950 sm:text-6xl lg:text-7xl">
               A better ward starts with being <span className="italic text-clay">heard.</span>
@@ -28,23 +34,34 @@ export function HomePage() {
                 Report an issue <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/reports" className="inline-flex min-h-12 items-center justify-center rounded-lg border border-civic-900 px-6 py-3 text-sm font-bold text-civic-950 hover:bg-white">
-                View public reports
+                View all issues
               </Link>
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-lg">
             <div className="absolute -inset-8 rotate-3 rounded-[2.5rem] bg-civic-100" />
-            <div className="relative overflow-hidden rounded-[2rem] bg-civic-900 p-8 text-white shadow-2xl sm:p-10">
+            <Link
+              to={latestIssue ? `/reports/${latestIssue.issue_number}` : "/reports"}
+              className="relative block overflow-hidden rounded-[2rem] bg-civic-900 p-8 text-white shadow-2xl transition hover:-translate-y-1 sm:p-10"
+            >
               <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full border-[35px] border-civic-700/50" />
               <MapPinned className="h-12 w-12 text-civic-300" />
-              <p className="mt-14 font-mono text-sm font-bold tracking-widest text-civic-300">W47-2026-000123</p>
-              <h2 className="mt-3 font-display text-3xl font-bold">Streetlight not working</h2>
-              <p className="mt-3 text-sm leading-6 text-civic-200">Lancia Street near the community park</p>
+              <p className="mt-14 font-mono text-sm font-bold tracking-widest text-civic-300">
+                {latestIssue?.issue_number || "LATEST WARD ISSUE"}
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-bold">
+                {latestIssue?.title || (latestIssueQuery.isLoading ? "Loading latest issue..." : "No issues logged yet")}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-civic-200">
+                {latestIssue?.street_address || "New reports will appear here as they are logged."}
+              </p>
               <div className="mt-8 flex items-center justify-between border-t border-white/15 pt-5">
-                <span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-bold text-amber-950">Reported</span>
-                <span className="text-xs text-civic-300">Updated today</span>
+                {latestIssue ? <Badge status={latestIssue.status} /> : <span />}
+                <span className="text-xs text-civic-300">
+                  {latestIssue ? `Updated ${formatDistanceToNow(new Date(latestIssue.updated_at), { addSuffix: true })}` : "View all issues"}
+                </span>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>

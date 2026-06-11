@@ -19,6 +19,17 @@ export interface IssuePhoto {
   public_url?: string;
 }
 
+export interface PublicCommunication {
+  id: string;
+  communication_type: "initial" | "followup";
+  recipient_email: string;
+  subject: string;
+  body: string;
+  delivery_status: "pending" | "sent" | "failed";
+  sent_at: string | null;
+  created_at: string;
+}
+
 export interface Issue {
   id: string;
   issue_number: string;
@@ -36,6 +47,7 @@ export interface Issue {
   issue_types: IssueType | null;
   wards?: Pick<Ward, "name"> | null;
   issue_photos: IssuePhoto[];
+  communications?: PublicCommunication[];
 }
 
 export interface CreateIssueInput {
@@ -49,6 +61,5 @@ export interface CreateIssueInput {
   longitude?: number;
   reporterName?: string;
   reporterEmail?: string;
-  reporterMobile?: string;
   photos: File[];
 }
