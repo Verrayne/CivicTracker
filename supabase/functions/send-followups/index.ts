@@ -54,6 +54,7 @@ Deno.serve(async (request) => {
         <p>Please provide a status update for <strong>${issue.issue_number}</strong>.</p>
         <p><strong>Type:</strong> ${issue.issue_types.name}</p>
         <p><strong>Address:</strong> ${issue.street_address}</p>
+        ${issue.lamp_pole_number ? `<p><strong>Lamp pole number:</strong> ${issue.lamp_pole_number}</p>` : ""}
         <p><strong>Originally reported:</strong> ${new Date(issue.created_at).toLocaleDateString("en-ZA")}</p>
       `;
 

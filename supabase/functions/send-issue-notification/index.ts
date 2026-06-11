@@ -11,7 +11,66 @@ Deno.serve(async (request) => {
   );
 
   try {
-    const { issueId } = await request.json();
+    const { issueId, communicationId, resend } = await request.json();
+
+    if (resend) {
+      if (!communicationId) throw new Error("communicationId is required");
+
+      const authorization = request.headers.get("Authorization");
+      if (!authorization) throw new Error("Administrator authentication is required");
+      const userClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authorization } } },
+      );
+      const { data: userData, error: userError } = await userClient.auth.getUser();
+      if (userError || !userData.user) throw new Error("Administrator authentication is required");
+      const { data: isAdmin, error: adminError } = await userClient.rpc("is_admin");
+      if (adminError || !isAdmin) throw new Error("Administrator access is required");
+
+      const { data: settings, error: settingsError } = await supabase
+        .from("app_settings")
+        .select("email_delivery_enabled")
+        .eq("singleton", true)
+        .single();
+      if (settingsError) throw settingsError;
+      if (!settings.email_delivery_enabled) {
+        throw new Error("Email delivery is disabled. Enable it in Settings before resending.");
+      }
+
+      const { data: communication, error: communicationError } = await supabase
+        .from("communications")
+        .select("id,issue_id,recipient_email,subject,body")
+        .eq("id", communicationId)
+        .single();
+      if (communicationError) throw communicationError;
+
+      await supabase.from("communications").update({ delivery_status: "pending" }).eq("id", communication.id);
+      try {
+        await sendEmail({
+          apiKey: Deno.env.get("RESEND_API_KEY")!,
+          from: Deno.env.get("RESEND_FROM_EMAIL") || "WardWorks <notifications@wardworks.co.za>",
+          to: communication.recipient_email,
+          subject: communication.subject,
+          html: communication.body,
+        });
+        await Promise.all([
+          supabase.from("communications").update({
+            delivery_status: "sent",
+            sent_at: new Date().toISOString(),
+          }).eq("id", communication.id),
+          supabase.from("issues").update({ status: "Reported" }).eq("id", communication.issue_id).eq("status", "Open"),
+        ]);
+      } catch (sendError) {
+        await supabase.from("communications").update({ delivery_status: "failed" }).eq("id", communication.id);
+        throw sendError;
+      }
+
+      return new Response(JSON.stringify({ success: true, resent: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!issueId) throw new Error("issueId is required");
 
     const { data: issue, error } = await supabase
@@ -58,6 +117,7 @@ Deno.serve(async (request) => {
       <p><strong>Title:</strong> ${issue.title}</p>
       <p><strong>Description:</strong><br>${issue.description}</p>
       <p><strong>Address:</strong> ${issue.street_address}</p>
+      ${issue.lamp_pole_number ? `<p><strong>Lamp pole number:</strong> ${issue.lamp_pole_number}</p>` : ""}
       <p><a href="${mapsUrl}">View location on Google Maps</a></p>
       ${photoLinks.length ? `<p><strong>Photos:</strong><br>${photoLinks.map((url: string) => `<a href="${url}">${url}</a>`).join("<br>")}</p>` : ""}
     `;

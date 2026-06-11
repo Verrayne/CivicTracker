@@ -50,7 +50,7 @@ export async function getIssues(filters: IssueFilters): Promise<Issue[]> {
     .from("issues")
     .select(`
       id, issue_number, title, description, street_address, nearest_intersection,
-      latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
+      lamp_pole_number, latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
       issue_types(id,name), wards(name), issue_photos(id,storage_path)
     `);
 
@@ -76,7 +76,7 @@ export async function getLatestIssue(): Promise<Issue | null> {
     .from("issues")
     .select(`
       id, issue_number, title, description, street_address, nearest_intersection,
-      latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
+      lamp_pole_number, latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
       issue_types(id,name), wards(name), issue_photos(id,storage_path)
     `)
     .order("created_at", { ascending: false })
@@ -93,7 +93,7 @@ export async function getIssue(issueNumber: string): Promise<Issue> {
       .from("issues")
       .select(`
         id, issue_number, title, description, street_address, nearest_intersection,
-        latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
+        lamp_pole_number, latitude, longitude, status, reference_number, followup_count, created_at, updated_at,
         issue_types(id,name), wards(name), issue_photos(id,storage_path)
       `)
       .eq("issue_number", issueNumber)
@@ -123,6 +123,7 @@ export async function createIssue(input: CreateIssueInput): Promise<Issue> {
       description: input.description,
       street_address: input.streetAddress,
       nearest_intersection: input.nearestIntersection || null,
+      lamp_pole_number: input.lampPoleNumber || null,
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       reporter_name: input.reporterName || null,

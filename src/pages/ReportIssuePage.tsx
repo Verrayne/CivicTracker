@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, Copy, LocateFixed, MapPin, ShieldCheck, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -16,9 +16,11 @@ import { isSupabaseConfigured } from "../lib/supabase";
 import { createIssue } from "../services/issues";
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
+const STREETLIGHT_ISSUE_TYPE_ID = "10000000-0000-0000-0000-000000000002";
 const formSchema = z.object({
   wardId: z.string().min(1, "Ward is required"),
   issueTypeId: z.string().min(1, "Select an issue type"),
+  lampPoleNumber: z.string().trim().max(100).optional(),
   title: z.string().trim().min(5, "Use at least 5 characters").max(120),
   description: z.string().trim().min(5, "Please provide at least 5 characters").max(2000),
   streetAddress: z.string().trim().min(5, "Street address is required").max(250),
@@ -27,6 +29,14 @@ const formSchema = z.object({
   longitude: z.number().min(-180).max(180).optional(),
   reporterName: z.string().trim().max(100).optional(),
   reporterEmail: z.union([z.literal(""), z.string().email("Enter a valid email")]).optional(),
+}).superRefine((values, context) => {
+  if (values.issueTypeId === STREETLIGHT_ISSUE_TYPE_ID && !values.lampPoleNumber?.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["lampPoleNumber"],
+      message: "Lamp pole number is required for streetlight issues",
+    });
+  }
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,6 +67,7 @@ export function ReportIssuePage() {
     values: {
       wardId: municipalityWards[0]?.id || "",
       issueTypeId: "",
+      lampPoleNumber: "",
       title: "",
       description: "",
       streetAddress: "",
@@ -72,6 +83,11 @@ export function ReportIssuePage() {
   const wardId = watch("wardId");
   const issueTypeId = watch("issueTypeId");
   const descriptionField = register("description");
+  const isStreetlight = issueTypeId === STREETLIGHT_ISSUE_TYPE_ID;
+
+  useEffect(() => {
+    if (!isStreetlight) setValue("lampPoleNumber", "");
+  }, [isStreetlight, setValue]);
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => createIssue({ ...values, photos }),
@@ -167,6 +183,16 @@ export function ReportIssuePage() {
               />
               {errors.issueTypeId && <p className="mt-1.5 text-xs text-red-700">{errors.issueTypeId.message}</p>}
             </div>
+            {isStreetlight && (
+              <div className="sm:col-span-2">
+                <Input
+                  label="Lamp pole number"
+                  placeholder="Enter the number shown on the lamp pole"
+                  error={errors.lampPoleNumber?.message}
+                  {...register("lampPoleNumber")}
+                />
+              </div>
+            )}
             <div className="sm:col-span-2"><Input label="Title" placeholder="e.g. Large pothole blocking left lane" error={errors.title?.message} {...register("title")} /></div>
             <div className="relative sm:col-span-2">
               <Textarea

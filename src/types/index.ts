@@ -43,6 +43,15 @@ export interface PublicCommunication {
   created_at: string;
 }
 
+export interface AdminCommunication extends PublicCommunication {
+  issue_id: string;
+  issues: {
+    issue_number: string;
+    title: string;
+    issue_types: IssueType | null;
+  } | null;
+}
+
 export interface Issue {
   id: string;
   issue_number: string;
@@ -50,6 +59,7 @@ export interface Issue {
   description: string;
   street_address: string;
   nearest_intersection: string | null;
+  lamp_pole_number: string | null;
   latitude: number | null;
   longitude: number | null;
   status: IssueStatus;
@@ -70,6 +80,7 @@ export interface CreateIssueInput {
   description: string;
   streetAddress: string;
   nearestIntersection?: string;
+  lampPoleNumber?: string;
   latitude?: number;
   longitude?: number;
   reporterName?: string;

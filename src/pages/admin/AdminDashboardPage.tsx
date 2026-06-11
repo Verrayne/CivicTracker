@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Building2, Landmark, LogOut, Mail, Plus, Save, Settings, ShieldCheck, Trash2, X } from "lucide-react";
+import { Building2, ChevronDown, Landmark, LogOut, Mail, Plus, RotateCcw, Save, Settings, ShieldCheck, Trash2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -14,16 +14,21 @@ import {
   createWard,
   deleteIssue,
   getAdminIssues,
+  getAdminCommunications,
   getAdminSettings,
+  getRoutingRules,
+  resendCommunication,
+  saveRoutingRule,
   updateEmailDelivery,
   updateMunicipality,
   updateWard,
   type MunicipalityInput,
+  type RoutingRule,
   type WardInput,
 } from "../../services/admin";
 import type { Issue, Municipality, Ward } from "../../types";
 
-type AdminTab = "municipalities" | "wards" | "issues" | "settings";
+type AdminTab = "municipalities" | "wards" | "issues" | "mails" | "settings";
 
 const emptyWard = (municipalityId: string): WardInput => ({
   name: "",
@@ -333,9 +338,144 @@ function IssuesPanel() {
   );
 }
 
+function MailsPanel() {
+  const queryClient = useQueryClient();
+  const communications = useQuery({ queryKey: ["admin-communications"], queryFn: getAdminCommunications });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const resendMutation = useMutation({
+    mutationFn: resendCommunication,
+    onSuccess: () => {
+      setMessage("Email resent successfully.");
+      void queryClient.invalidateQueries({ queryKey: ["issues"] });
+    },
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: ["admin-communications"] }),
+  });
+
+  const statusStyle = {
+    sent: "bg-emerald-100 text-emerald-800",
+    failed: "bg-red-100 text-red-800",
+    pending: "bg-amber-100 text-amber-900",
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="font-display text-3xl font-bold text-civic-950">Generated emails</h2>
+        <p className="mt-1 text-sm text-stone-500">Review municipality emails and retry delivery when needed.</p>
+      </div>
+      {message && <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
+      {resendMutation.isError && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{resendMutation.error.message}</p>}
+      <div className="overflow-hidden rounded-2xl border bg-white">
+        <div className="hidden grid-cols-[145px_150px_1fr_110px_120px] gap-4 border-b bg-stone-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-stone-500 lg:grid">
+          <span>Issue</span><span>Type</span><span>Title</span><span>Status</span><span />
+        </div>
+        {communications.data?.map((communication) => {
+          const expanded = expandedId === communication.id;
+          return (
+            <div key={communication.id} className="border-b last:border-0">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={expanded}
+                onClick={() => setExpandedId(expanded ? null : communication.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setExpandedId(expanded ? null : communication.id);
+                  }
+                }}
+                className="grid cursor-pointer gap-3 px-5 py-5 hover:bg-stone-50 lg:grid-cols-[145px_150px_1fr_110px_120px] lg:items-center lg:gap-4"
+              >
+                <span className="font-mono text-xs font-bold text-civic-700">{communication.issues?.issue_number || "Unknown"}</span>
+                <span className="text-sm text-stone-600">{communication.issues?.issue_types?.name || "Unknown type"}</span>
+                <div className="flex min-w-0 items-center justify-between gap-3">
+                  <span className="truncate font-semibold text-civic-950">{communication.issues?.title || communication.subject}</span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-stone-400 transition lg:hidden ${expanded ? "rotate-180" : ""}`} />
+                </div>
+                <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusStyle[communication.delivery_status]}`}>
+                  {communication.delivery_status}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  loading={resendMutation.isPending && resendMutation.variables === communication.id}
+                  disabled={resendMutation.isPending}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    resendMutation.mutate(communication.id);
+                  }}
+                  onKeyDown={(event) => event.stopPropagation()}
+                  className="px-3"
+                >
+                  <RotateCcw className="h-4 w-4" /> Resend
+                </Button>
+              </div>
+              {expanded && (
+                <div className="border-t bg-stone-50 px-5 py-5">
+                  <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                    <div><dt className="text-xs font-bold uppercase tracking-wider text-stone-400">To</dt><dd className="mt-1 text-stone-700">{communication.recipient_email}</dd></div>
+                    <div><dt className="text-xs font-bold uppercase tracking-wider text-stone-400">Subject</dt><dd className="mt-1 text-stone-700">{communication.subject}</dd></div>
+                  </dl>
+                  <iframe
+                    title={`Email ${communication.subject}`}
+                    sandbox=""
+                    srcDoc={communication.body}
+                    className="mt-5 min-h-80 w-full rounded-xl border bg-white"
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {!communications.isLoading && !communications.data?.length && (
+          <p className="px-5 py-10 text-center text-sm text-stone-500">No generated emails yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RoutingRuleCard({ rule }: { rule: RoutingRule }) {
+  const queryClient = useQueryClient();
+  const [emailAddress, setEmailAddress] = useState(rule.email_address);
+  const mutation = useMutation({
+    mutationFn: () => saveRoutingRule({ ...rule, email_address: emailAddress }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["routing-rules"] }),
+  });
+
+  return (
+    <Card className="p-5">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          mutation.mutate();
+        }}
+      >
+        <h3 className="font-display text-xl font-bold text-civic-950">{rule.issue_type.name}</h3>
+        <Input
+          className="mt-4"
+          aria-label={`${rule.issue_type.name} recipient email`}
+          type="email"
+          placeholder="municipality@example.gov.za"
+          value={emailAddress}
+          onChange={(event) => setEmailAddress(event.target.value)}
+          required
+        />
+        <Button type="submit" variant="secondary" loading={mutation.isPending} className="mt-3">
+          <Save className="h-4 w-4" /> Save address
+        </Button>
+        {mutation.isSuccess && <p className="mt-2 text-xs text-emerald-700">Address saved.</p>}
+        {mutation.isError && <p className="mt-2 text-xs text-red-700">{mutation.error.message}</p>}
+      </form>
+    </Card>
+  );
+}
+
 function SettingsPanel() {
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({ queryKey: ["admin-settings"], queryFn: getAdminSettings });
+  const routingRules = useQuery({ queryKey: ["routing-rules"], queryFn: getRoutingRules });
   const mutation = useMutation({
     mutationFn: updateEmailDelivery,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-settings"] }),
@@ -373,6 +513,14 @@ function SettingsPanel() {
         </div>
         {mutation.isError && <p className="mt-3 text-sm text-red-700">{mutation.error.message}</p>}
       </Card>
+      <div className="pt-4">
+        <h2 className="font-display text-3xl font-bold text-civic-950">Issue routing</h2>
+        <p className="mt-1 text-sm text-stone-500">Set the municipality email address used for each issue type.</p>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {routingRules.data?.map((rule) => <RoutingRuleCard key={rule.issue_type_id} rule={rule} />)}
+        </div>
+        {routingRules.isError && <p className="mt-3 text-sm text-red-700">{routingRules.error.message}</p>}
+      </div>
     </div>
   );
 }
@@ -385,6 +533,7 @@ export function AdminDashboardPage() {
     { id: "municipalities", label: "Municipalities", icon: Landmark },
     { id: "wards", label: "Wards", icon: Building2 },
     { id: "issues", label: "Issues", icon: ShieldCheck },
+    { id: "mails", label: "Mails", icon: Mail },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -409,6 +558,7 @@ export function AdminDashboardPage() {
         {tab === "municipalities" && <MunicipalitiesPanel />}
         {tab === "wards" && <WardsPanel />}
         {tab === "issues" && <IssuesPanel />}
+        {tab === "mails" && <MailsPanel />}
         {tab === "settings" && <SettingsPanel />}
       </div>
     </div>
