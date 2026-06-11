@@ -132,3 +132,4 @@ npm run lint      # lint the frontend
 npm run preview   # preview the production build
 ```
 # CivicTracker
+# CivicTracker
