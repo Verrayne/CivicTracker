@@ -1,0 +1,39 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #17211d;
+    background: #f7f4ed;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    @apply border-stone-200;
+  }
+
+  body {
+    @apply m-0 min-w-80 bg-parchment font-sans text-stone-900 antialiased;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    @apply bg-civic-200 text-civic-950;
+  }
+}
+
+@layer utilities {
+  .paper-grid {
+    background-image:
+      linear-gradient(rgba(13, 59, 46, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(13, 59, 46, 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
