@@ -20,7 +20,11 @@ function withPhotoUrls<T extends Issue>(issue: T): T {
 export async function getWards(): Promise<Ward[]> {
   const { data, error } = await supabase
     .from("wards")
-    .select("id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,municipalities(id,name,province)")
+    .select(`
+      id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,
+      councillor_website_url,councillor_instagram_url,councillor_tiktok_url,councillor_facebook_url,
+      municipalities(id,name,province)
+    `)
     .order("name");
   if (error) throw error;
   return data as unknown as Ward[];

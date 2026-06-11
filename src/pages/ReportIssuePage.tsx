@@ -7,8 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { Dropdown } from "../components/ui/Dropdown";
 import { Input } from "../components/ui/Input";
-import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
 import { useReferenceData } from "../hooks/useIssues";
 import { useMunicipality } from "../context/municipality";
@@ -69,6 +69,8 @@ export function ReportIssuePage() {
     resetOptions: { keepDirtyValues: true },
   });
   const title = watch("title");
+  const wardId = watch("wardId");
+  const issueTypeId = watch("issueTypeId");
   const descriptionField = register("description");
 
   const mutation = useMutation({
@@ -138,14 +140,33 @@ export function ReportIssuePage() {
             <div><h2 className="font-display text-xl font-bold text-civic-950">Issue details</h2><p className="text-sm text-stone-500">What happened, and where?</p></div>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Select label="Ward" error={errors.wardId?.message} {...register("wardId")}>
-              <option value="">Select your ward</option>
-              {municipalityWards.map((ward) => <option key={ward.id} value={ward.id}>{ward.name}</option>)}
-            </Select>
-            <Select label="Issue type" error={errors.issueTypeId?.message} {...register("issueTypeId")}>
-              <option value="">Select an issue type</option>
-              {issueTypes.data?.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
-            </Select>
+            <div>
+              <p className="mb-1.5 text-sm font-semibold text-stone-800">Ward</p>
+              <Dropdown
+                ariaLabel="Ward"
+                value={wardId}
+                onChange={(value) => setValue("wardId", value, { shouldDirty: true, shouldValidate: true })}
+                options={
+                  municipalityWards.length
+                    ? municipalityWards.map(({ id, name }) => ({ value: id, label: name }))
+                    : [{ value: "", label: "No wards available yet" }]
+                }
+              />
+              {errors.wardId && <p className="mt-1.5 text-xs text-red-700">{errors.wardId.message}</p>}
+            </div>
+            <div>
+              <p className="mb-1.5 text-sm font-semibold text-stone-800">Issue type</p>
+              <Dropdown
+                ariaLabel="Issue type"
+                value={issueTypeId}
+                onChange={(value) => setValue("issueTypeId", value, { shouldDirty: true, shouldValidate: true })}
+                options={[
+                  { value: "", label: "Select an issue type" },
+                  ...(issueTypes.data || []).map(({ id, name }) => ({ value: id, label: name })),
+                ]}
+              />
+              {errors.issueTypeId && <p className="mt-1.5 text-xs text-red-700">{errors.issueTypeId.message}</p>}
+            </div>
             <div className="sm:col-span-2"><Input label="Title" placeholder="e.g. Large pothole blocking left lane" error={errors.title?.message} {...register("title")} /></div>
             <div className="relative sm:col-span-2">
               <Textarea

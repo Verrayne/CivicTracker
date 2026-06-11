@@ -14,6 +14,10 @@ export interface Ward {
   councillor_name: string | null;
   councillor_email: string | null;
   councillor_mobile: string | null;
+  councillor_website_url: string | null;
+  councillor_instagram_url: string | null;
+  councillor_tiktok_url: string | null;
+  councillor_facebook_url: string | null;
   municipalities?: Municipality | null;
 }
 

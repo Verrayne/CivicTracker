@@ -31,6 +31,10 @@ const emptyWard = (municipalityId: string): WardInput => ({
   councillor_name: "",
   councillor_email: "",
   councillor_mobile: "",
+  councillor_website_url: "",
+  councillor_instagram_url: "",
+  councillor_tiktok_url: "",
+  councillor_facebook_url: "",
 });
 
 function WardForm({
@@ -71,6 +75,10 @@ function WardForm({
       <Input label="Councillor name" placeholder="Optional" value={values.councillor_name} onChange={(event) => setValues({ ...values, councillor_name: event.target.value })} />
       <Input label="Councillor email" type="email" placeholder="Optional" value={values.councillor_email} onChange={(event) => setValues({ ...values, councillor_email: event.target.value })} />
       <Input label="Councillor mobile" type="tel" placeholder="Optional" value={values.councillor_mobile} onChange={(event) => setValues({ ...values, councillor_mobile: event.target.value })} />
+      <Input label="Website or profile URL" type="url" placeholder="https://..." value={values.councillor_website_url} onChange={(event) => setValues({ ...values, councillor_website_url: event.target.value })} />
+      <Input label="Instagram URL" type="url" placeholder="https://instagram.com/..." value={values.councillor_instagram_url} onChange={(event) => setValues({ ...values, councillor_instagram_url: event.target.value })} />
+      <Input label="TikTok URL" type="url" placeholder="https://tiktok.com/@..." value={values.councillor_tiktok_url} onChange={(event) => setValues({ ...values, councillor_tiktok_url: event.target.value })} />
+      <Input label="Facebook URL" type="url" placeholder="https://facebook.com/..." value={values.councillor_facebook_url} onChange={(event) => setValues({ ...values, councillor_facebook_url: event.target.value })} />
       {error && <p className="text-sm text-red-700 sm:col-span-2">{error}</p>}
       <div className="flex gap-3 sm:col-span-2">
         <Button type="submit" loading={loading}><Save className="h-4 w-4" /> {submitLabel}</Button>
@@ -139,6 +147,10 @@ function WardsPanel() {
             councillor_name: ward.councillor_name || "",
             councillor_email: ward.councillor_email || "",
             councillor_mobile: ward.councillor_mobile || "",
+            councillor_website_url: ward.councillor_website_url || "",
+            councillor_instagram_url: ward.councillor_instagram_url || "",
+            councillor_tiktok_url: ward.councillor_tiktok_url || "",
+            councillor_facebook_url: ward.councillor_facebook_url || "",
           };
           return (
             <Card key={ward.id} className="p-6">

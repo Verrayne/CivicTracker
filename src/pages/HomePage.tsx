@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
-import { ArrowRight, CheckCircle2, ClipboardList, Mail, MapPinned, Phone, Send, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, CheckCircle2, ClipboardList, Facebook, Globe, Instagram, Mail, MapPinned, MessageCircle, Send, Users } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/ui/Badge";
 import { Dropdown } from "../components/ui/Dropdown";
@@ -13,6 +13,36 @@ const steps = [
   { icon: Send, number: "02", title: "We route the report", text: "Your issue is logged and sent to the relevant municipal channel." },
   { icon: CheckCircle2, number: "03", title: "Track it publicly", text: "Use your issue number to follow status changes and follow-ups." },
 ];
+
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M14.5 3c.3 2.5 1.7 4 4.5 4.2v3.1a9.2 9.2 0 0 1-4.5-1.4v6.2a6.1 6.1 0 1 1-5.3-6v3.2a3 3 0 1 0 2.1 2.8V3h3.2Z" />
+    </svg>
+  );
+}
+
+function ProfileIcon({ href, label, children }: { href: string | null | undefined; label: string; children: ReactNode }) {
+  const className = `grid h-10 w-10 place-items-center rounded-full border transition ${
+    href
+      ? "border-white/20 bg-white/10 text-white hover:border-white/40 hover:bg-white/20"
+      : "cursor-not-allowed border-white/5 bg-white/5 text-white/25"
+  }`;
+
+  if (!href) return <span className={className} aria-label={`${label} unavailable`} title={`${label} unavailable`}>{children}</span>;
+  return (
+    <a className={className} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
+      {children}
+    </a>
+  );
+}
+
+function whatsappUrl(mobile: string) {
+  let digits = mobile.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = `27${digits.slice(1)}`;
+  return `https://wa.me/${digits}`;
+}
 
 export function HomePage() {
   const latestIssueQuery = useLatestIssue();
@@ -143,10 +173,24 @@ export function HomePage() {
                   </a>
                 ) : <p className="text-civic-300">Email not available</p>}
                 {selectedWard?.councillor_mobile ? (
-                  <a className="flex items-center gap-3 text-civic-100 hover:text-white" href={`tel:${selectedWard.councillor_mobile}`}>
-                    <Phone className="h-4 w-4 text-civic-300" /> {selectedWard.councillor_mobile}
+                  <a className="flex items-center gap-3 text-civic-100 hover:text-white" href={whatsappUrl(selectedWard.councillor_mobile)} target="_blank" rel="noreferrer">
+                    <MessageCircle className="h-4 w-4 text-civic-300" /> {selectedWard.councillor_mobile}
                   </a>
                 ) : <p className="text-civic-300">Mobile number not available</p>}
+              </div>
+              <div className="mt-5 flex items-center gap-2 border-t border-white/10 pt-5">
+                <ProfileIcon href={selectedWard?.councillor_website_url} label="Councillor website">
+                  <Globe className="h-4 w-4" />
+                </ProfileIcon>
+                <ProfileIcon href={selectedWard?.councillor_instagram_url} label="Councillor Instagram">
+                  <Instagram className="h-4 w-4" />
+                </ProfileIcon>
+                <ProfileIcon href={selectedWard?.councillor_tiktok_url} label="Councillor TikTok">
+                  <TikTokIcon className="h-4 w-4" />
+                </ProfileIcon>
+                <ProfileIcon href={selectedWard?.councillor_facebook_url} label="Councillor Facebook">
+                  <Facebook className="h-4 w-4" />
+                </ProfileIcon>
               </div>
             </div>
           </div>

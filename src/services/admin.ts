@@ -12,6 +12,10 @@ export interface WardInput {
   councillor_name: string;
   councillor_email: string;
   councillor_mobile: string;
+  councillor_website_url: string;
+  councillor_instagram_url: string;
+  councillor_tiktok_url: string;
+  councillor_facebook_url: string;
 }
 
 export interface MunicipalityInput {
@@ -64,8 +68,16 @@ export async function createWard(input: WardInput): Promise<Ward> {
       councillor_name: input.councillor_name.trim() || null,
       councillor_email: input.councillor_email.trim() || null,
       councillor_mobile: input.councillor_mobile.trim() || null,
+      councillor_website_url: input.councillor_website_url.trim() || null,
+      councillor_instagram_url: input.councillor_instagram_url.trim() || null,
+      councillor_tiktok_url: input.councillor_tiktok_url.trim() || null,
+      councillor_facebook_url: input.councillor_facebook_url.trim() || null,
     })
-    .select("id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,municipalities(id,name,province)")
+    .select(`
+      id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,
+      councillor_website_url,councillor_instagram_url,councillor_tiktok_url,councillor_facebook_url,
+      municipalities(id,name,province)
+    `)
     .single();
   if (error) throw error;
   return data as unknown as Ward;
@@ -80,9 +92,17 @@ export async function updateWard(id: string, input: WardInput): Promise<Ward> {
       councillor_name: input.councillor_name.trim() || null,
       councillor_email: input.councillor_email.trim() || null,
       councillor_mobile: input.councillor_mobile.trim() || null,
+      councillor_website_url: input.councillor_website_url.trim() || null,
+      councillor_instagram_url: input.councillor_instagram_url.trim() || null,
+      councillor_tiktok_url: input.councillor_tiktok_url.trim() || null,
+      councillor_facebook_url: input.councillor_facebook_url.trim() || null,
     })
     .eq("id", id)
-    .select("id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,municipalities(id,name,province)")
+    .select(`
+      id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,
+      councillor_website_url,councillor_instagram_url,councillor_tiktok_url,councillor_facebook_url,
+      municipalities(id,name,province)
+    `)
     .single();
   if (error) throw error;
   return data as unknown as Ward;
