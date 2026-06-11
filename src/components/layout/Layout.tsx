@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { MapPin, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "../../lib/utils";
 
 const nav = [
@@ -11,6 +11,10 @@ const nav = [
 
 export function Layout() {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = "WardWorks";
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col">
