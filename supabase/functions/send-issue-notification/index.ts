@@ -40,7 +40,7 @@ Deno.serve(async (request) => {
 
       const { data: communication, error: communicationError } = await supabase
         .from("communications")
-        .select("id,issue_id,recipient_email,subject,body,issues(issue_type_id)")
+        .select("id,issue_id,recipient_email,subject,body,issues(issue_type_id,wards(municipality_id))")
         .eq("id", communicationId)
         .single();
       if (communicationError) throw communicationError;
@@ -49,10 +49,12 @@ Deno.serve(async (request) => {
         .from("routing_rules")
         .select("email_address")
         .eq("issue_type_id", communication.issues.issue_type_id)
+        .eq("municipality_id", communication.issues.wards.municipality_id)
         .eq("active", true)
         .limit(1)
         .maybeSingle();
-      const recipient = rule?.email_address || communication.recipient_email;
+      if (!rule?.email_address) throw new Error("No active email route is configured for this municipality and issue type");
+      const recipient = rule.email_address;
 
       await supabase.from("communications").update({
         recipient_email: recipient,
@@ -87,7 +89,7 @@ Deno.serve(async (request) => {
 
     const { data: issue, error } = await supabase
       .from("issues")
-      .select("*, issue_types(name), wards(name), issue_photos(storage_path)")
+      .select("*, issue_types(name), wards(name,municipality_id,municipalities(name)), issue_photos(storage_path)")
       .eq("id", issueId)
       .single();
     if (error) throw error;
@@ -96,11 +98,13 @@ Deno.serve(async (request) => {
       .from("routing_rules")
       .select("email_address")
       .eq("issue_type_id", issue.issue_type_id)
+      .eq("municipality_id", issue.wards.municipality_id)
       .eq("active", true)
       .limit(1)
       .maybeSingle();
 
-    const recipient = rule?.email_address || "customercare@tshwane.gov.za";
+    if (!rule?.email_address) throw new Error("No active email route is configured for this municipality and issue type");
+    const recipient = rule.email_address;
 
     const { data: existingCommunication } = await supabase
       .from("communications")
@@ -123,7 +127,7 @@ Deno.serve(async (request) => {
       ? `https://www.google.com/maps?q=${issue.latitude},${issue.longitude}`
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(issue.street_address)}`;
     const html = `
-      <h1>New Ward 47 municipal issue</h1>
+      <h1>New ${issue.wards.municipalities.name} municipal issue</h1>
       <p><strong>Issue:</strong> ${issue.issue_number}</p>
       <p><strong>Type:</strong> ${issue.issue_types.name}</p>
       <p><strong>Title:</strong> ${issue.title}</p>

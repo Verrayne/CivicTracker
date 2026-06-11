@@ -8,7 +8,7 @@ import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { useAuth } from "../../context/auth";
-import { getMunicipalities, getWards } from "../../services/issues";
+import { getIssueTypes, getMunicipalities, getWards } from "../../services/issues";
 import {
   createMunicipality,
   createWard,
@@ -18,15 +18,13 @@ import {
   getAdminSettings,
   getRoutingRules,
   resendCommunication,
-  saveRoutingRule,
   updateEmailDelivery,
   updateMunicipality,
   updateWard,
   type MunicipalityInput,
-  type RoutingRule,
   type WardInput,
 } from "../../services/admin";
-import type { Issue, Municipality, Ward } from "../../types";
+import type { Issue, IssueType, Municipality, Ward } from "../../types";
 
 type AdminTab = "municipalities" | "wards" | "issues" | "mails" | "settings";
 
@@ -196,18 +194,38 @@ function MunicipalityForm({
   loading,
   onSubmit,
   onCancel,
+  issueTypes,
 }: {
   initial: MunicipalityInput;
   submitLabel: string;
   loading: boolean;
   onSubmit: (input: MunicipalityInput) => void;
   onCancel?: () => void;
+  issueTypes: IssueType[];
 }) {
   const [values, setValues] = useState(initial);
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(values); }}>
       <Input label="Municipality name" placeholder="e.g. Johannesburg" value={values.name} onChange={(event) => setValues({ ...values, name: event.target.value })} required />
       <Input label="Province" placeholder="e.g. Gauteng" value={values.province} onChange={(event) => setValues({ ...values, province: event.target.value })} required />
+      <div className="border-t pt-5 sm:col-span-2">
+        <h4 className="font-display text-xl font-bold text-civic-950">Issue email routing</h4>
+        <p className="mt-1 text-sm text-stone-500">Set the recipient for each issue type in this municipality.</p>
+      </div>
+      {issueTypes.map((issueType) => (
+        <Input
+          key={issueType.id}
+          label={issueType.name}
+          type="email"
+          placeholder="municipality@example.gov.za"
+          value={values.routing_emails[issueType.id] || ""}
+          onChange={(event) => setValues({
+            ...values,
+            routing_emails: { ...values.routing_emails, [issueType.id]: event.target.value },
+          })}
+          required
+        />
+      ))}
       <div className="flex gap-3 sm:col-span-2">
         <Button type="submit" loading={loading}><Save className="h-4 w-4" /> {submitLabel}</Button>
         {onCancel && <Button type="button" variant="ghost" onClick={onCancel}><X className="h-4 w-4" /> Cancel</Button>}
@@ -219,6 +237,9 @@ function MunicipalityForm({
 function MunicipalitiesPanel() {
   const queryClient = useQueryClient();
   const municipalities = useQuery({ queryKey: ["municipalities"], queryFn: getMunicipalities });
+  const issueTypes = useQuery({ queryKey: ["issue-types"], queryFn: getIssueTypes });
+  const routingRules = useQuery({ queryKey: ["routing-rules"], queryFn: getRoutingRules });
+  const routingReady = Boolean(issueTypes.data && routingRules.data);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -228,6 +249,7 @@ function MunicipalitiesPanel() {
       setAdding(false);
       setMessage("Municipality added.");
       void queryClient.invalidateQueries({ queryKey: ["municipalities"] });
+      void queryClient.invalidateQueries({ queryKey: ["routing-rules"] });
     },
   });
   const updateMutation = useMutation({
@@ -237,14 +259,24 @@ function MunicipalitiesPanel() {
       setMessage("Municipality updated.");
       void queryClient.invalidateQueries({ queryKey: ["municipalities"] });
       void queryClient.invalidateQueries({ queryKey: ["wards"] });
+      void queryClient.invalidateQueries({ queryKey: ["routing-rules"] });
     },
   });
+
+  function routingEmailsFor(municipalityId?: string) {
+    return Object.fromEntries((issueTypes.data || []).map((issueType) => [
+      issueType.id,
+      routingRules.data?.find((rule) =>
+        rule.municipality_id === municipalityId && rule.issue_type_id === issueType.id
+      )?.email_address || "",
+    ]));
+  }
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div><h2 className="font-display text-3xl font-bold text-civic-950">Municipalities</h2><p className="mt-1 text-sm text-stone-500">Maintain the municipalities available across WardWorks.</p></div>
-        <Button onClick={() => setAdding(!adding)}><Plus className="h-4 w-4" /> Add municipality</Button>
+        <div><h2 className="font-display text-3xl font-bold text-civic-950">Municipalities</h2><p className="mt-1 text-sm text-stone-500">Maintain municipality details and issue email routing.</p></div>
+        <Button disabled={!routingReady} onClick={() => setAdding(!adding)}><Plus className="h-4 w-4" /> Add municipality</Button>
       </div>
       {message && <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
       {(createMutation.isError || updateMutation.isError) && (
@@ -253,7 +285,14 @@ function MunicipalitiesPanel() {
       {adding && (
         <Card className="p-6">
           <h3 className="mb-5 font-display text-xl font-bold text-civic-950">New municipality</h3>
-          <MunicipalityForm initial={{ name: "", province: "" }} submitLabel="Add municipality" loading={createMutation.isPending} onSubmit={(input) => createMutation.mutate(input)} onCancel={() => setAdding(false)} />
+          <MunicipalityForm
+            initial={{ name: "", province: "", routing_emails: routingEmailsFor() }}
+            issueTypes={issueTypes.data || []}
+            submitLabel="Add municipality"
+            loading={createMutation.isPending}
+            onSubmit={(input) => createMutation.mutate(input)}
+            onCancel={() => setAdding(false)}
+          />
         </Card>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -261,7 +300,12 @@ function MunicipalitiesPanel() {
           <Card key={municipality.id} className="p-6">
             {editingId === municipality.id ? (
               <MunicipalityForm
-                initial={{ name: municipality.name, province: municipality.province }}
+                initial={{
+                  name: municipality.name,
+                  province: municipality.province,
+                  routing_emails: routingEmailsFor(municipality.id),
+                }}
+                issueTypes={issueTypes.data || []}
                 submitLabel="Save changes"
                 loading={updateMutation.isPending}
                 onSubmit={(input) => updateMutation.mutate({ id: municipality.id, input })}
@@ -270,7 +314,7 @@ function MunicipalitiesPanel() {
             ) : (
               <div className="flex items-start justify-between gap-4">
                 <div><h3 className="font-display text-2xl font-bold text-civic-950">{municipality.name}</h3><p className="mt-1 text-sm text-stone-500">{municipality.province}</p></div>
-                <Button variant="secondary" onClick={() => setEditingId(municipality.id)}>Edit</Button>
+                <Button variant="secondary" disabled={!routingReady} onClick={() => setEditingId(municipality.id)}>Edit</Button>
               </div>
             )}
           </Card>
@@ -442,46 +486,9 @@ function MailsPanel() {
   );
 }
 
-function RoutingRuleCard({ rule }: { rule: RoutingRule }) {
-  const queryClient = useQueryClient();
-  const [emailAddress, setEmailAddress] = useState(rule.email_address);
-  const mutation = useMutation({
-    mutationFn: () => saveRoutingRule({ ...rule, email_address: emailAddress }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["routing-rules"] }),
-  });
-
-  return (
-    <Card className="p-5">
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate();
-        }}
-      >
-        <h3 className="font-display text-xl font-bold text-civic-950">{rule.issue_type.name}</h3>
-        <Input
-          className="mt-4"
-          aria-label={`${rule.issue_type.name} recipient email`}
-          type="email"
-          placeholder="municipality@example.gov.za"
-          value={emailAddress}
-          onChange={(event) => setEmailAddress(event.target.value)}
-          required
-        />
-        <Button type="submit" variant="secondary" loading={mutation.isPending} className="mt-3">
-          <Save className="h-4 w-4" /> Save address
-        </Button>
-        {mutation.isSuccess && <p className="mt-2 text-xs text-emerald-700">Address saved.</p>}
-        {mutation.isError && <p className="mt-2 text-xs text-red-700">{mutation.error.message}</p>}
-      </form>
-    </Card>
-  );
-}
-
 function SettingsPanel() {
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({ queryKey: ["admin-settings"], queryFn: getAdminSettings });
-  const routingRules = useQuery({ queryKey: ["routing-rules"], queryFn: getRoutingRules });
   const mutation = useMutation({
     mutationFn: updateEmailDelivery,
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-settings"] }),
@@ -519,14 +526,6 @@ function SettingsPanel() {
         </div>
         {mutation.isError && <p className="mt-3 text-sm text-red-700">{mutation.error.message}</p>}
       </Card>
-      <div className="pt-4">
-        <h2 className="font-display text-3xl font-bold text-civic-950">Issue routing</h2>
-        <p className="mt-1 text-sm text-stone-500">Set the municipality email address used for each issue type.</p>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {routingRules.data?.map((rule) => <RoutingRuleCard key={rule.issue_type_id} rule={rule} />)}
-        </div>
-        {routingRules.isError && <p className="mt-3 text-sm text-red-700">{routingRules.error.message}</p>}
-      </div>
     </div>
   );
 }

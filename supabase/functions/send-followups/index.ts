@@ -31,7 +31,7 @@ Deno.serve(async (request) => {
 
     const { data: issues, error } = await supabase
       .from("issues")
-      .select("*, issue_types(name)")
+      .select("*, issue_types(name), wards(municipality_id,municipalities(name))")
       .not("status", "in", '("Resolved","Closed")')
       .or(`last_followup_sent.is.null,last_followup_sent.lt.${cutoff}`)
       .lt("created_at", cutoff);
@@ -43,14 +43,23 @@ Deno.serve(async (request) => {
         .from("routing_rules")
         .select("email_address")
         .eq("issue_type_id", issue.issue_type_id)
+        .eq("municipality_id", issue.wards.municipality_id)
         .eq("active", true)
         .limit(1)
         .maybeSingle();
 
-      const recipient = rule?.email_address || "customercare@tshwane.gov.za";
+      if (!rule?.email_address) {
+        results.push({
+          issue: issue.issue_number,
+          status: "failed",
+          error: "No active email route is configured for this municipality and issue type",
+        });
+        continue;
+      }
+      const recipient = rule.email_address;
       const subject = `Follow-up: [${issue.issue_number}] ${issue.title}`;
       const html = `
-        <h1>Follow-up on unresolved Ward 47 issue</h1>
+        <h1>Follow-up on unresolved ${issue.wards.municipalities.name} issue</h1>
         <p>Please provide a status update for <strong>${issue.issue_number}</strong>.</p>
         <p><strong>Type:</strong> ${issue.issue_types.name}</p>
         <p><strong>Address:</strong> ${issue.street_address}</p>

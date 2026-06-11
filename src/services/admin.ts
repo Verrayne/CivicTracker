@@ -22,10 +22,12 @@ export interface WardInput {
 export interface MunicipalityInput {
   name: string;
   province: string;
+  routing_emails: Record<string, string>;
 }
 
 export interface RoutingRule {
   id: string | null;
+  municipality_id: string;
   issue_type_id: string;
   email_address: string;
   active: boolean;
@@ -124,6 +126,7 @@ export async function createMunicipality(input: MunicipalityInput): Promise<Muni
     .select("id,name,province")
     .single();
   if (error) throw error;
+  await saveMunicipalityRoutingRules(data.id, input.routing_emails);
   return data;
 }
 
@@ -135,6 +138,7 @@ export async function updateMunicipality(id: string, input: MunicipalityInput): 
     .select("id,name,province")
     .single();
   if (error) throw error;
+  await saveMunicipalityRoutingRules(id, input.routing_emails);
   return data;
 }
 
@@ -194,39 +198,26 @@ export async function resendCommunication(communicationId: string) {
 }
 
 export async function getRoutingRules(): Promise<RoutingRule[]> {
-  const [{ data: issueTypes, error: typesError }, { data: rules, error: rulesError }] = await Promise.all([
-    supabase.from("issue_types").select("id,name").order("name"),
-    supabase.from("routing_rules").select("id,issue_type_id,email_address,active").eq("active", true),
-  ]);
-  if (typesError) throw typesError;
-  if (rulesError) throw rulesError;
-
-  return (issueTypes || []).map((issueType) => {
-    const rule = rules?.find((item) => item.issue_type_id === issueType.id);
-    return {
-      id: rule?.id || null,
-      issue_type_id: issueType.id,
-      email_address: rule?.email_address || "",
-      active: rule?.active ?? true,
-      issue_type: issueType,
-    };
-  });
+  const { data, error } = await supabase
+    .from("routing_rules")
+    .select("id,municipality_id,issue_type_id,email_address,active,issue_types(id,name)")
+    .eq("active", true);
+  if (error) throw error;
+  return data?.map((rule) => ({
+    ...rule,
+    issue_type: Array.isArray(rule.issue_types) ? rule.issue_types[0] : rule.issue_types,
+  })) as unknown as RoutingRule[];
 }
 
-export async function saveRoutingRule(rule: RoutingRule): Promise<void> {
-  if (rule.id) {
-    const { error } = await supabase
-      .from("routing_rules")
-      .update({ email_address: rule.email_address.trim(), active: true })
-      .eq("id", rule.id);
-    if (error) throw error;
-    return;
-  }
-
-  const { error } = await supabase.from("routing_rules").insert({
-    issue_type_id: rule.issue_type_id,
-    email_address: rule.email_address.trim(),
+async function saveMunicipalityRoutingRules(municipalityId: string, routingEmails: Record<string, string>) {
+  const rows = Object.entries(routingEmails).map(([issueTypeId, emailAddress]) => ({
+    municipality_id: municipalityId,
+    issue_type_id: issueTypeId,
+    email_address: emailAddress.trim(),
     active: true,
-  });
+  }));
+  const { error } = await supabase
+    .from("routing_rules")
+    .upsert(rows, { onConflict: "municipality_id,issue_type_id" });
   if (error) throw error;
 }
