@@ -6,6 +6,7 @@ export interface Ward {
   name: string;
   councillor_name: string | null;
   councillor_email: string | null;
+  councillor_mobile: string | null;
 }
 
 export interface IssueType {

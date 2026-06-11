@@ -71,12 +71,19 @@ Deno.serve(async (request) => {
         subject,
         body: html,
         delivery_status: "pending",
-      })
+    })
       .select("id")
       .single();
     if (communicationError) throw communicationError;
 
-    if (Deno.env.get("EMAIL_DELIVERY_ENABLED") !== "true") {
+    const { data: settings, error: settingsError } = await supabase
+      .from("app_settings")
+      .select("email_delivery_enabled")
+      .eq("singleton", true)
+      .single();
+    if (settingsError) throw settingsError;
+
+    if (!settings.email_delivery_enabled) {
       console.log(`Email delivery disabled; retained pending communication ${communication.id}`);
       return new Response(JSON.stringify({ success: true, deliveryEnabled: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

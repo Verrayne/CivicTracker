@@ -18,7 +18,7 @@ function withPhotoUrls<T extends Issue>(issue: T): T {
 }
 
 export async function getWards(): Promise<Ward[]> {
-  const { data, error } = await supabase.from("wards").select("id,name,councillor_name,councillor_email").order("name");
+  const { data, error } = await supabase.from("wards").select("id,name,councillor_name,councillor_email,councillor_mobile").order("name");
   if (error) throw error;
   return data;
 }

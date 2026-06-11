@@ -12,16 +12,23 @@ Deno.serve(async (request) => {
   if (request.headers.get("x-cron-secret") !== expectedSecret) {
     return new Response("Unauthorized", { status: 401, headers: corsHeaders });
   }
-  if (Deno.env.get("EMAIL_DELIVERY_ENABLED") !== "true") {
-    return new Response(JSON.stringify({ processed: 0, results: [], deliveryEnabled: false }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   try {
+    const { data: settings, error: settingsError } = await supabase
+      .from("app_settings")
+      .select("email_delivery_enabled")
+      .eq("singleton", true)
+      .single();
+    if (settingsError) throw settingsError;
+    if (!settings.email_delivery_enabled) {
+      return new Response(JSON.stringify({ processed: 0, results: [], deliveryEnabled: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: issues, error } = await supabase
       .from("issues")
       .select("*, issue_types(name)")

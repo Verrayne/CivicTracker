@@ -76,7 +76,6 @@ Verify a sending domain in [Resend](https://resend.com), then configure secrets:
 supabase secrets set \
   RESEND_API_KEY=re_your_key \
   RESEND_FROM_EMAIL="WardWorks <notifications@wardworks.co.za>" \
-  EMAIL_DELIVERY_ENABLED=false \
   CRON_SECRET=REPLACE_WITH_THE_SAME_LONG_RANDOM_VALUE
 ```
 
@@ -91,7 +90,23 @@ supabase functions deploy send-followups --no-verify-jwt
 
 Notification delivery is deliberately asynchronous from the browser's perspective. A Resend failure is recorded in `communications`, but it does not roll back a resident's report.
 
-Set `EMAIL_DELIVERY_ENABLED=true` only when municipal delivery is ready for production.
+Municipality email delivery is controlled from the authenticated administrator dashboard.
+
+## Administrator setup
+
+1. Apply all migrations.
+2. In **Supabase Dashboard > Authentication > Users**, create the administrator user with an email and password.
+3. Copy the new user's UUID.
+4. In the SQL Editor, authorize the account:
+
+```sql
+insert into public.admin_users (user_id)
+values ('USER_UUID_HERE');
+```
+
+5. Sign in at `/admin/login`.
+
+Administrator permissions are enforced by database RLS. The dashboard can add and update wards, manage councillor contact details, remove duplicate issues, and control municipality email delivery.
 
 To test a follow-up run:
 

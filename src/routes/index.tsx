@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 import { Layout } from "../components/layout/Layout";
 import { LoadingSpinner } from "../components/feedback/States";
+import { AdminRoute } from "../components/admin/AdminRoute";
 
 const HomePage = lazy(() => import("../pages/HomePage").then((module) => ({ default: module.HomePage })));
 const IssueDetailPage = lazy(() => import("../pages/IssueDetailPage").then((module) => ({ default: module.IssueDetailPage })));
@@ -9,6 +10,8 @@ const NotFoundPage = lazy(() => import("../pages/NotFoundPage").then((module) =>
 const ReportIssuePage = lazy(() => import("../pages/ReportIssuePage").then((module) => ({ default: module.ReportIssuePage })));
 const ReportsPage = lazy(() => import("../pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
 const SuccessPage = lazy(() => import("../pages/SuccessPage").then((module) => ({ default: module.SuccessPage })));
+const AdminLoginPage = lazy(() => import("../pages/admin/AdminLoginPage").then((module) => ({ default: module.AdminLoginPage })));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage").then((module) => ({ default: module.AdminDashboardPage })));
 
 export function AppRoutes() {
   return (
@@ -20,6 +23,10 @@ export function AppRoutes() {
           <Route path="/report/success/:issueNumber" element={<SuccessPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/reports/:issueNumber" element={<IssueDetailPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboardPage />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
