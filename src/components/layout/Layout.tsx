@@ -3,9 +3,10 @@ import { MapPin, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useMunicipality } from "../../context/municipality";
 import { cn } from "../../lib/utils";
+import { Dropdown } from "../ui/Dropdown";
 
 const nav = [
-  { to: "/reports", label: "View reports" },
+  { to: "/reports", label: "View Issues" },
   { to: "/report", label: "Report an issue" },
 ];
 
@@ -28,20 +29,6 @@ export function Layout() {
             <strong className="font-display text-xl leading-none text-civic-950">WardWorks</strong>
           </Link>
           <nav className="hidden items-center gap-2 md:flex">
-            <label className="flex items-center gap-2 rounded-lg border border-civic-900/10 bg-white px-3 py-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Municipality</span>
-              <select
-                aria-label="Municipality"
-                value={selectedMunicipalityId}
-                disabled={loading}
-                onChange={(event) => setSelectedMunicipalityId(event.target.value)}
-                className="max-w-40 bg-transparent text-sm font-semibold text-civic-950 outline-none"
-              >
-                {municipalities.map((municipality) => (
-                  <option key={municipality.id} value={municipality.id}>{municipality.name}</option>
-                ))}
-              </select>
-            </label>
             {nav.map((item) => (
               <NavLink
                 key={item.to}
@@ -56,6 +43,15 @@ export function Layout() {
                 {item.label}
               </NavLink>
             ))}
+            <Dropdown
+              ariaLabel="Municipality"
+              eyebrow="Municipality"
+              value={selectedMunicipalityId}
+              disabled={loading}
+              onChange={setSelectedMunicipalityId}
+              align="right"
+              options={municipalities.map(({ id, name }) => ({ value: id, label: name }))}
+            />
           </nav>
           <button className="rounded-lg p-2 md:hidden" onClick={() => setOpen(!open)} aria-label="Toggle navigation">
             {open ? <X /> : <Menu />}
@@ -63,20 +59,6 @@ export function Layout() {
         </div>
         {open && (
           <nav className="border-t bg-parchment px-5 py-3 md:hidden">
-            <label className="mb-2 block rounded-lg bg-white px-3 py-3">
-              <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-stone-400">Municipality</span>
-              <select
-                aria-label="Municipality"
-                value={selectedMunicipalityId}
-                disabled={loading}
-                onChange={(event) => setSelectedMunicipalityId(event.target.value)}
-                className="w-full bg-transparent text-sm font-semibold text-civic-950 outline-none"
-              >
-                {municipalities.map((municipality) => (
-                  <option key={municipality.id} value={municipality.id}>{municipality.name}</option>
-                ))}
-              </select>
-            </label>
             {nav.map((item) => (
               <NavLink
                 key={item.to}
@@ -87,6 +69,15 @@ export function Layout() {
                 {item.label}
               </NavLink>
             ))}
+            <Dropdown
+              ariaLabel="Municipality"
+              eyebrow="Municipality"
+              value={selectedMunicipalityId}
+              disabled={loading}
+              onChange={setSelectedMunicipalityId}
+              options={municipalities.map(({ id, name }) => ({ value: id, label: name }))}
+              className="mt-2"
+            />
           </nav>
         )}
       </header>

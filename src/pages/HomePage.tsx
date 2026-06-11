@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, ClipboardList, Mail, MapPinned, Phone, Send, 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/ui/Badge";
+import { Dropdown } from "../components/ui/Dropdown";
 import { useMunicipality } from "../context/municipality";
 import { useLatestIssue } from "../hooks/useIssues";
 import { useReferenceData } from "../hooks/useIssues";
@@ -118,17 +119,20 @@ export function HomePage() {
                 <h3 className="font-display text-2xl font-bold">Ward lookup</h3>
               </div>
             </div>
-            <label className="mt-6 block">
-              <span className="mb-1.5 block text-sm font-semibold text-civic-100">Select your ward</span>
-              <select
+            <div className="mt-6">
+              <p className="mb-1.5 text-sm font-semibold text-civic-100">Select your ward</p>
+              <Dropdown
+                ariaLabel="Select your ward"
+                variant="dark"
                 value={selectedWardId}
-                onChange={(event) => setSelectedWardId(event.target.value)}
-                className="min-h-11 w-full rounded-lg border border-white/15 bg-white px-3.5 py-2.5 text-sm text-civic-950 outline-none focus:ring-2 focus:ring-civic-300"
-              >
-                {!municipalityWards.length && <option value="">No wards available yet</option>}
-                {municipalityWards.map((ward) => <option key={ward.id} value={ward.id}>{ward.name}</option>)}
-              </select>
-            </label>
+                onChange={setSelectedWardId}
+                options={
+                  municipalityWards.length
+                    ? municipalityWards.map(({ id, name }) => ({ value: id, label: name }))
+                    : [{ value: "", label: "No wards available yet" }]
+                }
+              />
+            </div>
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-civic-300">Ward councillor</p>
               <p className="mt-2 font-display text-2xl font-bold">{selectedWard?.councillor_name || "Details being updated"}</p>
