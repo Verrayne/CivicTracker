@@ -341,6 +341,7 @@ function IssuesPanel() {
 function MailsPanel() {
   const queryClient = useQueryClient();
   const communications = useQuery({ queryKey: ["admin-communications"], queryFn: getAdminCommunications });
+  const settingsQuery = useQuery({ queryKey: ["admin-settings"], queryFn: getAdminSettings });
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const resendMutation = useMutation({
@@ -362,8 +363,13 @@ function MailsPanel() {
     <div className="space-y-5">
       <div>
         <h2 className="font-display text-3xl font-bold text-civic-950">Generated emails</h2>
-        <p className="mt-1 text-sm text-stone-500">Review municipality emails and retry delivery when needed.</p>
+        <p className="mt-1 text-sm text-stone-500">Review municipality emails and retry delivery using the issue type's current routing address.</p>
       </div>
+      {!settingsQuery.data?.email_delivery_enabled && (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          Email delivery is OFF. Enable it in Settings before resending.
+        </p>
+      )}
       {message && <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
       {resendMutation.isError && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{resendMutation.error.message}</p>}
       <div className="overflow-hidden rounded-2xl border bg-white">
@@ -400,7 +406,7 @@ function MailsPanel() {
                   type="button"
                   variant="secondary"
                   loading={resendMutation.isPending && resendMutation.variables === communication.id}
-                  disabled={resendMutation.isPending}
+                  disabled={resendMutation.isPending || !settingsQuery.data?.email_delivery_enabled}
                   onClick={(event) => {
                     event.stopPropagation();
                     resendMutation.mutate(communication.id);

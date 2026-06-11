@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { AdminCommunication, Issue, IssueType, Municipality, Ward } from "../types";
 
@@ -177,6 +178,16 @@ export async function resendCommunication(communicationId: string) {
   const { data, error } = await supabase.functions.invoke("send-issue-notification", {
     body: { communicationId, resend: true },
   });
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const response = await error.context.json();
+      throw new Error(response.error || error.message);
+    } catch (responseError) {
+      if (responseError instanceof Error && responseError.message !== "Unexpected end of JSON input") {
+        throw responseError;
+      }
+    }
+  }
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return data;

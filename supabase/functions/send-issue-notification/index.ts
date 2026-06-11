@@ -40,17 +40,29 @@ Deno.serve(async (request) => {
 
       const { data: communication, error: communicationError } = await supabase
         .from("communications")
-        .select("id,issue_id,recipient_email,subject,body")
+        .select("id,issue_id,recipient_email,subject,body,issues(issue_type_id)")
         .eq("id", communicationId)
         .single();
       if (communicationError) throw communicationError;
 
-      await supabase.from("communications").update({ delivery_status: "pending" }).eq("id", communication.id);
+      const { data: rule } = await supabase
+        .from("routing_rules")
+        .select("email_address")
+        .eq("issue_type_id", communication.issues.issue_type_id)
+        .eq("active", true)
+        .limit(1)
+        .maybeSingle();
+      const recipient = rule?.email_address || communication.recipient_email;
+
+      await supabase.from("communications").update({
+        recipient_email: recipient,
+        delivery_status: "pending",
+      }).eq("id", communication.id);
       try {
         await sendEmail({
           apiKey: Deno.env.get("RESEND_API_KEY")!,
           from: Deno.env.get("RESEND_FROM_EMAIL") || "WardWorks <notifications@wardworks.co.za>",
-          to: communication.recipient_email,
+          to: recipient,
           subject: communication.subject,
           html: communication.body,
         });
