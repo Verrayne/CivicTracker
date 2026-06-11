@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, Copy, LocateFixed, MapPin, ShieldCheck, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
 import { useReferenceData } from "../hooks/useIssues";
+import { useMunicipality } from "../context/municipality";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { createIssue } from "../services/issues";
 
@@ -34,6 +35,11 @@ export function ReportIssuePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { wards, issueTypes } = useReferenceData();
+  const { selectedMunicipalityId } = useMunicipality();
+  const municipalityWards = useMemo(
+    () => (wards.data || []).filter((ward) => ward.municipality_id === selectedMunicipalityId),
+    [wards.data, selectedMunicipalityId],
+  );
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoError, setPhotoError] = useState("");
   const [locationError, setLocationError] = useState("");
@@ -49,7 +55,7 @@ export function ReportIssuePage() {
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     values: {
-      wardId: wards.data?.[0]?.id || "",
+      wardId: municipalityWards[0]?.id || "",
       issueTypeId: "",
       title: "",
       description: "",
@@ -132,8 +138,10 @@ export function ReportIssuePage() {
             <div><h2 className="font-display text-xl font-bold text-civic-950">Issue details</h2><p className="text-sm text-stone-500">What happened, and where?</p></div>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Input label="Ward" value={wards.data?.[0]?.name || "Ward 47"} disabled />
-            <input type="hidden" {...register("wardId")} />
+            <Select label="Ward" error={errors.wardId?.message} {...register("wardId")}>
+              <option value="">Select your ward</option>
+              {municipalityWards.map((ward) => <option key={ward.id} value={ward.id}>{ward.name}</option>)}
+            </Select>
             <Select label="Issue type" error={errors.issueTypeId?.message} {...register("issueTypeId")}>
               <option value="">Select an issue type</option>
               {issueTypes.data?.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AppRoutes } from "./routes";
 import { AuthProvider } from "./context/AuthContext";
+import { MunicipalityProvider } from "./context/MunicipalityContext";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -19,9 +20,11 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <MunicipalityProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </MunicipalityProvider>
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

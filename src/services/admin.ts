@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { Issue, Ward } from "../types";
+import type { Issue, Municipality, Ward } from "../types";
 
 export interface AdminSettings {
   email_delivery_enabled: boolean;
@@ -8,9 +8,15 @@ export interface AdminSettings {
 
 export interface WardInput {
   name: string;
+  municipality_id: string;
   councillor_name: string;
   councillor_email: string;
   councillor_mobile: string;
+}
+
+export interface MunicipalityInput {
+  name: string;
+  province: string;
 }
 
 export async function signInAdmin(email: string, password: string) {
@@ -54,14 +60,15 @@ export async function createWard(input: WardInput): Promise<Ward> {
     .from("wards")
     .insert({
       name: input.name.trim(),
+      municipality_id: input.municipality_id,
       councillor_name: input.councillor_name.trim() || null,
       councillor_email: input.councillor_email.trim() || null,
       councillor_mobile: input.councillor_mobile.trim() || null,
     })
-    .select("id,name,councillor_name,councillor_email,councillor_mobile")
+    .select("id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,municipalities(id,name,province)")
     .single();
   if (error) throw error;
-  return data;
+  return data as unknown as Ward;
 }
 
 export async function updateWard(id: string, input: WardInput): Promise<Ward> {
@@ -69,12 +76,34 @@ export async function updateWard(id: string, input: WardInput): Promise<Ward> {
     .from("wards")
     .update({
       name: input.name.trim(),
+      municipality_id: input.municipality_id,
       councillor_name: input.councillor_name.trim() || null,
       councillor_email: input.councillor_email.trim() || null,
       councillor_mobile: input.councillor_mobile.trim() || null,
     })
     .eq("id", id)
-    .select("id,name,councillor_name,councillor_email,councillor_mobile")
+    .select("id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,municipalities(id,name,province)")
+    .single();
+  if (error) throw error;
+  return data as unknown as Ward;
+}
+
+export async function createMunicipality(input: MunicipalityInput): Promise<Municipality> {
+  const { data, error } = await supabase
+    .from("municipalities")
+    .insert({ name: input.name.trim(), province: input.province.trim() })
+    .select("id,name,province")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateMunicipality(id: string, input: MunicipalityInput): Promise<Municipality> {
+  const { data, error } = await supabase
+    .from("municipalities")
+    .update({ name: input.name.trim(), province: input.province.trim() })
+    .eq("id", id)
+    .select("id,name,province")
     .single();
   if (error) throw error;
   return data;

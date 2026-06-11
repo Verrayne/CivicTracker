@@ -1,12 +1,20 @@
 export const ISSUE_STATUSES = ["Open", "Reported", "In Progress", "Resolved", "Closed"] as const;
 export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
+export interface Municipality {
+  id: string;
+  name: string;
+  province: string;
+}
+
 export interface Ward {
   id: string;
   name: string;
+  municipality_id: string;
   councillor_name: string | null;
   councillor_email: string | null;
   councillor_mobile: string | null;
+  municipalities?: Municipality | null;
 }
 
 export interface IssueType {

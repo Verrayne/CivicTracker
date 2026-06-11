@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { CreateIssueInput, Issue, IssuePhoto, IssueStatus, IssueType, PublicCommunication, Ward } from "../types";
+import type { CreateIssueInput, Issue, IssuePhoto, IssueStatus, IssueType, Municipality, PublicCommunication, Ward } from "../types";
 
 export interface IssueFilters {
   status?: IssueStatus | "All";
@@ -18,7 +18,19 @@ function withPhotoUrls<T extends Issue>(issue: T): T {
 }
 
 export async function getWards(): Promise<Ward[]> {
-  const { data, error } = await supabase.from("wards").select("id,name,councillor_name,councillor_email,councillor_mobile").order("name");
+  const { data, error } = await supabase
+    .from("wards")
+    .select("id,name,municipality_id,councillor_name,councillor_email,councillor_mobile,municipalities(id,name,province)")
+    .order("name");
+  if (error) throw error;
+  return data as unknown as Ward[];
+}
+
+export async function getMunicipalities(): Promise<Municipality[]> {
+  const { data, error } = await supabase
+    .from("municipalities")
+    .select("id,name,province")
+    .order("name");
   if (error) throw error;
   return data;
 }

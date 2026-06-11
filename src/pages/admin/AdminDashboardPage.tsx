@@ -1,32 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Building2, LogOut, Mail, Plus, Save, Settings, ShieldCheck, Trash2, X } from "lucide-react";
+import { Building2, Landmark, LogOut, Mail, Plus, Save, Settings, ShieldCheck, Trash2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
+import { Select } from "../../components/ui/Select";
 import { useAuth } from "../../context/auth";
-import { getWards } from "../../services/issues";
+import { getMunicipalities, getWards } from "../../services/issues";
 import {
+  createMunicipality,
   createWard,
   deleteIssue,
   getAdminIssues,
   getAdminSettings,
   updateEmailDelivery,
+  updateMunicipality,
   updateWard,
+  type MunicipalityInput,
   type WardInput,
 } from "../../services/admin";
-import type { Issue, Ward } from "../../types";
+import type { Issue, Municipality, Ward } from "../../types";
 
-type AdminTab = "wards" | "issues" | "settings";
+type AdminTab = "municipalities" | "wards" | "issues" | "settings";
 
-const emptyWard: WardInput = {
+const emptyWard = (municipalityId: string): WardInput => ({
   name: "",
+  municipality_id: municipalityId,
   councillor_name: "",
   councillor_email: "",
   councillor_mobile: "",
-};
+});
 
 function WardForm({
   initial,
@@ -34,12 +39,14 @@ function WardForm({
   onSubmit,
   onCancel,
   loading,
+  municipalities,
 }: {
   initial: WardInput;
   submitLabel: string;
   onSubmit: (input: WardInput) => void;
   onCancel?: () => void;
   loading: boolean;
+  municipalities: Municipality[];
 }) {
   const [values, setValues] = useState(initial);
   const [error, setError] = useState("");
@@ -56,6 +63,10 @@ function WardForm({
 
   return (
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+      <Select label="Municipality" value={values.municipality_id} onChange={(event) => setValues({ ...values, municipality_id: event.target.value })} required>
+        <option value="">Select a municipality</option>
+        {municipalities.map((municipality) => <option key={municipality.id} value={municipality.id}>{municipality.name}</option>)}
+      </Select>
       <Input label="Ward name" placeholder="Ward 48" value={values.name} onChange={(event) => setValues({ ...values, name: event.target.value })} required />
       <Input label="Councillor name" placeholder="Optional" value={values.councillor_name} onChange={(event) => setValues({ ...values, councillor_name: event.target.value })} />
       <Input label="Councillor email" type="email" placeholder="Optional" value={values.councillor_email} onChange={(event) => setValues({ ...values, councillor_email: event.target.value })} />
@@ -72,6 +83,7 @@ function WardForm({
 function WardsPanel() {
   const queryClient = useQueryClient();
   const wards = useQuery({ queryKey: ["wards", "admin"], queryFn: getWards });
+  const municipalities = useQuery({ queryKey: ["municipalities"], queryFn: getMunicipalities });
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -109,13 +121,21 @@ function WardsPanel() {
       {adding && (
         <Card className="p-6">
           <h3 className="mb-5 font-display text-xl font-bold text-civic-950">New ward</h3>
-          <WardForm initial={emptyWard} submitLabel="Add ward" loading={createMutation.isPending} onSubmit={(input) => createMutation.mutate(input)} onCancel={() => setAdding(false)} />
+          <WardForm
+            initial={emptyWard(municipalities.data?.[0]?.id || "")}
+            municipalities={municipalities.data || []}
+            submitLabel="Add ward"
+            loading={createMutation.isPending}
+            onSubmit={(input) => createMutation.mutate(input)}
+            onCancel={() => setAdding(false)}
+          />
         </Card>
       )}
       <div className="grid gap-4">
         {wards.data?.map((ward: Ward) => {
           const initial: WardInput = {
             name: ward.name,
+            municipality_id: ward.municipality_id,
             councillor_name: ward.councillor_name || "",
             councillor_email: ward.councillor_email || "",
             councillor_mobile: ward.councillor_mobile || "",
@@ -125,6 +145,7 @@ function WardsPanel() {
               {editingId === ward.id ? (
                 <WardForm
                   initial={initial}
+                  municipalities={municipalities.data || []}
                   submitLabel="Save changes"
                   loading={updateMutation.isPending}
                   onSubmit={(input) => updateMutation.mutate({ id: ward.id, input })}
@@ -133,7 +154,8 @@ function WardsPanel() {
               ) : (
                 <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
                   <div>
-                    <h3 className="font-display text-2xl font-bold text-civic-950">{ward.name}</h3>
+                    <p className="text-xs font-bold uppercase tracking-wider text-clay">{ward.municipalities?.name || "Municipality not set"}</p>
+                    <h3 className="mt-1 font-display text-2xl font-bold text-civic-950">{ward.name}</h3>
                     <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
                       <div><dt className="text-xs text-stone-400">Councillor</dt><dd className="font-semibold">{ward.councillor_name || "Not set"}</dd></div>
                       <div><dt className="text-xs text-stone-400">Email</dt><dd className="font-semibold">{ward.councillor_email || "Not set"}</dd></div>
@@ -146,6 +168,96 @@ function WardsPanel() {
             </Card>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function MunicipalityForm({
+  initial,
+  submitLabel,
+  loading,
+  onSubmit,
+  onCancel,
+}: {
+  initial: MunicipalityInput;
+  submitLabel: string;
+  loading: boolean;
+  onSubmit: (input: MunicipalityInput) => void;
+  onCancel?: () => void;
+}) {
+  const [values, setValues] = useState(initial);
+  return (
+    <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(values); }}>
+      <Input label="Municipality name" placeholder="e.g. Johannesburg" value={values.name} onChange={(event) => setValues({ ...values, name: event.target.value })} required />
+      <Input label="Province" placeholder="e.g. Gauteng" value={values.province} onChange={(event) => setValues({ ...values, province: event.target.value })} required />
+      <div className="flex gap-3 sm:col-span-2">
+        <Button type="submit" loading={loading}><Save className="h-4 w-4" /> {submitLabel}</Button>
+        {onCancel && <Button type="button" variant="ghost" onClick={onCancel}><X className="h-4 w-4" /> Cancel</Button>}
+      </div>
+    </form>
+  );
+}
+
+function MunicipalitiesPanel() {
+  const queryClient = useQueryClient();
+  const municipalities = useQuery({ queryKey: ["municipalities"], queryFn: getMunicipalities });
+  const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const createMutation = useMutation({
+    mutationFn: createMunicipality,
+    onSuccess: () => {
+      setAdding(false);
+      setMessage("Municipality added.");
+      void queryClient.invalidateQueries({ queryKey: ["municipalities"] });
+    },
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: MunicipalityInput }) => updateMunicipality(id, input),
+    onSuccess: () => {
+      setEditingId(null);
+      setMessage("Municipality updated.");
+      void queryClient.invalidateQueries({ queryKey: ["municipalities"] });
+      void queryClient.invalidateQueries({ queryKey: ["wards"] });
+    },
+  });
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <div><h2 className="font-display text-3xl font-bold text-civic-950">Municipalities</h2><p className="mt-1 text-sm text-stone-500">Maintain the municipalities available across WardWorks.</p></div>
+        <Button onClick={() => setAdding(!adding)}><Plus className="h-4 w-4" /> Add municipality</Button>
+      </div>
+      {message && <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
+      {(createMutation.isError || updateMutation.isError) && (
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{(createMutation.error || updateMutation.error)?.message}</p>
+      )}
+      {adding && (
+        <Card className="p-6">
+          <h3 className="mb-5 font-display text-xl font-bold text-civic-950">New municipality</h3>
+          <MunicipalityForm initial={{ name: "", province: "" }} submitLabel="Add municipality" loading={createMutation.isPending} onSubmit={(input) => createMutation.mutate(input)} onCancel={() => setAdding(false)} />
+        </Card>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {municipalities.data?.map((municipality) => (
+          <Card key={municipality.id} className="p-6">
+            {editingId === municipality.id ? (
+              <MunicipalityForm
+                initial={{ name: municipality.name, province: municipality.province }}
+                submitLabel="Save changes"
+                loading={updateMutation.isPending}
+                onSubmit={(input) => updateMutation.mutate({ id: municipality.id, input })}
+                onCancel={() => setEditingId(null)}
+              />
+            ) : (
+              <div className="flex items-start justify-between gap-4">
+                <div><h3 className="font-display text-2xl font-bold text-civic-950">{municipality.name}</h3><p className="mt-1 text-sm text-stone-500">{municipality.province}</p></div>
+                <Button variant="secondary" onClick={() => setEditingId(municipality.id)}>Edit</Button>
+              </div>
+            )}
+          </Card>
+        ))}
       </div>
     </div>
   );
@@ -258,6 +370,7 @@ export function AdminDashboardPage() {
   const { user, signOut } = useAuth();
 
   const tabs: { id: AdminTab; label: string; icon: typeof Building2 }[] = [
+    { id: "municipalities", label: "Municipalities", icon: Landmark },
     { id: "wards", label: "Wards", icon: Building2 },
     { id: "issues", label: "Issues", icon: ShieldCheck },
     { id: "settings", label: "Settings", icon: Settings },
@@ -281,6 +394,7 @@ export function AdminDashboardPage() {
         ))}
       </div>
       <div className="mt-8">
+        {tab === "municipalities" && <MunicipalitiesPanel />}
         {tab === "wards" && <WardsPanel />}
         {tab === "issues" && <IssuesPanel />}
         {tab === "settings" && <SettingsPanel />}
