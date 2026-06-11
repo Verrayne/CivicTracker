@@ -28,7 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void supabase.auth.getSession().then(({ data }) => applyUser(data.session?.user ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoading(true);
+      // Token refreshes can fire when a browser tab regains focus. Keeping the
+      // route mounted prevents in-progress admin forms from losing local state.
       void applyUser(session?.user ?? null);
     });
 
