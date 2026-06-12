@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import * as Sentry from "@sentry/react";
 import { Layout } from "../components/layout/Layout";
 import { LoadingSpinner } from "../components/feedback/States";
@@ -17,6 +17,9 @@ const MunicipalityOverviewPage = lazy(() => import("../pages/municipality/Munici
 const MunicipalityBudgetPage = lazy(() => import("../pages/municipality/MunicipalityBudgetPage").then((module) => ({ default: module.MunicipalityBudgetPage })));
 const MunicipalityManagementPage = lazy(() => import("../pages/municipality/MunicipalityManagementPage").then((module) => ({ default: module.MunicipalityManagementPage })));
 const MunicipalityPerformancePage = lazy(() => import("../pages/municipality/MunicipalityPerformancePage").then((module) => ({ default: module.MunicipalityPerformancePage })));
+const MunicipalityRevenuePage = lazy(() => import("../pages/municipality/budget-v2/MunicipalityRevenuePage").then((module) => ({ default: module.MunicipalityRevenuePage })));
+const MunicipalityExpenditurePage = lazy(() => import("../pages/municipality/budget-v2/MunicipalityExpenditurePage").then((module) => ({ default: module.MunicipalityExpenditurePage })));
+const MunicipalityCapitalPage = lazy(() => import("../pages/municipality/budget-v2/MunicipalityCapitalPage").then((module) => ({ default: module.MunicipalityCapitalPage })));
 const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 export function AppRoutes() {
@@ -31,6 +34,10 @@ export function AppRoutes() {
           <Route path="/reports/:issueNumber" element={<IssueDetailPage />} />
           <Route path="/municipality" element={<MunicipalityOverviewPage />} />
           <Route path="/municipality/budget" element={<MunicipalityBudgetPage />} />
+          <Route path="/municipality/budget-v2" element={<Navigate to="/municipality/budget-v2/revenue" replace />} />
+          <Route path="/municipality/budget-v2/revenue" element={<MunicipalityRevenuePage />} />
+          <Route path="/municipality/budget-v2/expenditure" element={<MunicipalityExpenditurePage />} />
+          <Route path="/municipality/budget-v2/capital" element={<MunicipalityCapitalPage />} />
           <Route path="/municipality/management" element={<MunicipalityManagementPage />} />
           <Route path="/municipality/performance" element={<MunicipalityPerformancePage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />

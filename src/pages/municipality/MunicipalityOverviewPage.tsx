@@ -13,6 +13,7 @@ function money(value: number | undefined) {
 
 const quickLinks = [
   { to: "/municipality/budget", title: "Budget", text: "See revenue, expenditure, allocations and financial documents.", icon: Banknote },
+  { to: "/municipality/budget-v2", title: "Budget 2.0", text: "Drill into the official MTREF revenue, expenditure and capital programme.", icon: Landmark },
   { to: "/municipality/management", title: "Management", text: "Understand the leadership structure and who is responsible.", icon: Users },
   { to: "/municipality/performance", title: "Performance", text: "Track service delivery outcomes and WardWorks resolution trends.", icon: CheckCircle2 },
 ];
@@ -43,7 +44,7 @@ export function MunicipalityOverviewPage() {
           <section className="mt-14">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-clay">Explore the municipality</p>
             <h2 className="mt-3 font-display text-3xl font-bold text-civic-950">Follow the money, people and results</h2>
-            <div className="mt-7 grid gap-5 md:grid-cols-3">
+            <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               {quickLinks.map(({ to, title, text, icon: Icon }) => (
                 <Link key={to} to={to} className="group rounded-2xl border bg-white p-6 shadow-card transition hover:-translate-y-1 hover:border-civic-300">
                   <span className="grid h-12 w-12 place-items-center rounded-xl bg-civic-50 text-civic-700"><Icon className="h-6 w-6" /></span>

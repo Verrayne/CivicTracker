@@ -191,3 +191,66 @@ export interface MunicipalityPerformanceData {
   monthlyTrends: MunicipalityMonthlyTrend[];
   kpis: MunicipalKpi[];
 }
+
+export type BudgetScenario = "Adjustment Budget" | "Budget" | "Estimate";
+
+export interface BudgetV2Fact {
+  id: string;
+  financialYear: string;
+  scenario: BudgetScenario;
+  category: string;
+  amount: number;
+  sortOrder: number;
+  sourceUrl: string | null;
+}
+
+export interface BudgetV2Summary {
+  financialYear: string;
+  scenario: BudgetScenario;
+  total: number;
+  previousTotal: number | null;
+  categories: BudgetV2Fact[];
+  allFacts: BudgetV2Fact[];
+  trend: BudgetV2Fact[];
+  sourceUrl: string | null;
+}
+
+export interface DepartmentBudget {
+  id: string;
+  departmentId: string;
+  department: string;
+  financialYear: string;
+  amount: number;
+  sourceUrl: string | null;
+}
+
+export interface CapitalFundingFact {
+  id: string;
+  source: string;
+  financialYear: string;
+  amount: number;
+  sortOrder: number;
+  sourceUrl: string | null;
+}
+
+export interface CapitalProject {
+  id: string;
+  name: string;
+  description: string | null;
+  location: string | null;
+  budgetAmount: number;
+  status: string;
+  department: string | null;
+  financialYear: string;
+  sourceUrl: string | null;
+}
+
+export interface CapitalBudgetSummary {
+  financialYear: string;
+  total: number;
+  largestDepartment: DepartmentBudget | null;
+  projectCount: number;
+  departmentBudgets: DepartmentBudget[];
+  fundingSources: CapitalFundingFact[];
+  sourceUrl: string | null;
+}

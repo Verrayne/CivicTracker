@@ -7,6 +7,7 @@ import { useMunicipality } from "../../context/municipality";
 const tabs = [
   { to: "/municipality", label: "Overview", end: true },
   { to: "/municipality/budget", label: "Budget" },
+  { to: "/municipality/budget-v2", label: "Budget 2.0" },
   { to: "/municipality/management", label: "Management" },
   { to: "/municipality/performance", label: "Performance" },
 ];
