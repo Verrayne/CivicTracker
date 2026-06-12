@@ -13,6 +13,10 @@ const ReportsPage = lazy(() => import("../pages/ReportsPage").then((module) => (
 const SuccessPage = lazy(() => import("../pages/SuccessPage").then((module) => ({ default: module.SuccessPage })));
 const AdminLoginPage = lazy(() => import("../pages/admin/AdminLoginPage").then((module) => ({ default: module.AdminLoginPage })));
 const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage").then((module) => ({ default: module.AdminDashboardPage })));
+const MunicipalityOverviewPage = lazy(() => import("../pages/municipality/MunicipalityOverviewPage").then((module) => ({ default: module.MunicipalityOverviewPage })));
+const MunicipalityBudgetPage = lazy(() => import("../pages/municipality/MunicipalityBudgetPage").then((module) => ({ default: module.MunicipalityBudgetPage })));
+const MunicipalityManagementPage = lazy(() => import("../pages/municipality/MunicipalityManagementPage").then((module) => ({ default: module.MunicipalityManagementPage })));
+const MunicipalityPerformancePage = lazy(() => import("../pages/municipality/MunicipalityPerformancePage").then((module) => ({ default: module.MunicipalityPerformancePage })));
 const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 export function AppRoutes() {
@@ -25,6 +29,10 @@ export function AppRoutes() {
           <Route path="/report/success/:issueNumber" element={<SuccessPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/reports/:issueNumber" element={<IssueDetailPage />} />
+          <Route path="/municipality" element={<MunicipalityOverviewPage />} />
+          <Route path="/municipality/budget" element={<MunicipalityBudgetPage />} />
+          <Route path="/municipality/management" element={<MunicipalityManagementPage />} />
+          <Route path="/municipality/performance" element={<MunicipalityPerformancePage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminDashboardPage />} />

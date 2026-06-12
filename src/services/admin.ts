@@ -123,7 +123,7 @@ export async function createMunicipality(input: MunicipalityInput): Promise<Muni
   const { data, error } = await supabase
     .from("municipalities")
     .insert({ name: input.name.trim(), province: input.province.trim() })
-    .select("id,name,province")
+    .select("id,name,province,website,employee_count")
     .single();
   if (error) throw error;
   await saveMunicipalityRoutingRules(data.id, input.routing_emails);
@@ -135,7 +135,7 @@ export async function updateMunicipality(id: string, input: MunicipalityInput): 
     .from("municipalities")
     .update({ name: input.name.trim(), province: input.province.trim() })
     .eq("id", id)
-    .select("id,name,province")
+    .select("id,name,province,website,employee_count")
     .single();
   if (error) throw error;
   await saveMunicipalityRoutingRules(id, input.routing_emails);

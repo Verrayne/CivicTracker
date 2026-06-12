@@ -33,7 +33,7 @@ export async function getWards(): Promise<Ward[]> {
 export async function getMunicipalities(): Promise<Municipality[]> {
   const { data, error } = await supabase
     .from("municipalities")
-    .select("id,name,province")
+    .select("id,name,province,website,employee_count")
     .order("name");
   if (error) throw error;
   return data;

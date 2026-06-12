@@ -15,7 +15,7 @@ export function MunicipalityProvider({ children }: { children: ReactNode }) {
     if (!query.data?.length) return;
     const selectionExists = query.data.some(({ id }) => id === selectedMunicipalityId);
     if (!selectionExists) {
-      const defaultMunicipality = query.data.find(({ name }) => name === "Tshwane") || query.data[0];
+      const defaultMunicipality = query.data.find(({ name }) => name.includes("Tshwane")) || query.data[0];
       setSelectedMunicipalityId(defaultMunicipality.id);
     }
   }, [query.data, selectedMunicipalityId]);

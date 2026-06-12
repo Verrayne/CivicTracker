@@ -6,6 +6,7 @@ import { cn } from "../../lib/utils";
 import { Dropdown } from "../ui/Dropdown";
 
 const nav = [
+  { to: "/municipality", label: "Municipality" },
   { to: "/reports", label: "View Issues" },
   { to: "/report", label: "Report an issue" },
 ];
