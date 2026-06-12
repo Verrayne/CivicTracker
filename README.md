@@ -25,6 +25,7 @@ Copy `.env.example` to `.env` and add the API settings from **Supabase > Project
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SENTRY_DSN=https://your-public-key@your-sentry-host/your-project-id
 ```
 
 Only the anon key belongs in the frontend. Never expose `SUPABASE_SERVICE_ROLE_KEY` as a `VITE_` variable.
@@ -120,7 +121,7 @@ curl -X POST \
 
 1. Import this repository into Vercel.
 2. Keep the detected framework as **Vite**.
-3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under **Project Settings > Environment Variables**.
+3. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_SENTRY_DSN` under **Project Settings > Environment Variables**.
 4. Deploy.
 
 `vercel.json` rewrites client-side routes to `index.html`, so report detail URLs work on direct navigation.

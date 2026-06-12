@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
+import * as Sentry from "@sentry/react";
 import { Layout } from "../components/layout/Layout";
 import { LoadingSpinner } from "../components/feedback/States";
 import { AdminRoute } from "../components/admin/AdminRoute";
@@ -12,11 +13,12 @@ const ReportsPage = lazy(() => import("../pages/ReportsPage").then((module) => (
 const SuccessPage = lazy(() => import("../pages/SuccessPage").then((module) => ({ default: module.SuccessPage })));
 const AdminLoginPage = lazy(() => import("../pages/admin/AdminLoginPage").then((module) => ({ default: module.AdminLoginPage })));
 const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage").then((module) => ({ default: module.AdminDashboardPage })));
+const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 export function AppRoutes() {
   return (
     <Suspense fallback={<LoadingSpinner label="Loading page..." />}>
-      <Routes>
+      <SentryRoutes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/report" element={<ReportIssuePage />} />
@@ -29,7 +31,7 @@ export function AppRoutes() {
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
-      </Routes>
+      </SentryRoutes>
     </Suspense>
   );
 }
