@@ -1,5 +1,6 @@
 import { subMonths } from "date-fns";
 import { supabase } from "../lib/supabase";
+import { getExpenditureSummary } from "./budgetV2Service";
 import type {
   MunicipalBudgetAllocation,
   MunicipalBudgetDocument,
@@ -50,38 +51,20 @@ async function getMunicipalityIssues(municipalityId: string): Promise<Municipali
 }
 
 export async function getMunicipalityOverview(municipalityId: string): Promise<MunicipalityOverviewData> {
-  const [municipalityResult, budgetResult, departmentsResult, managerResult, issues] = await Promise.all([
+  const [municipalityResult, expenditure, issues] = await Promise.all([
     supabase.from("municipalities").select("id,name,province,website,employee_count").eq("id", municipalityId).single(),
-    supabase
-      .from("municipal_budget_summary")
-      .select("id,municipality_id,financial_year,total_revenue,total_expenditure,capital_budget,operating_budget,is_sample_data")
-      .eq("municipality_id", municipalityId)
-      .order("financial_year", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase.from("municipal_departments").select("id", { count: "exact", head: true }).eq("municipality_id", municipalityId),
-    supabase
-      .from("municipal_officials")
-      .select(`
-        id,department_id,full_name,position,email,profile_image_url,bio,responsibilities,manager_id,display_order,
-        municipal_departments!inner(id,name,municipality_id)
-      `)
-      .eq("municipal_departments.municipality_id", municipalityId)
-      .eq("position", "Municipal Manager")
-      .maybeSingle(),
+    getExpenditureSummary(municipalityId),
     getMunicipalityIssues(municipalityId),
   ]);
 
   if (municipalityResult.error) throw municipalityResult.error;
-  if (budgetResult.error) throw budgetResult.error;
-  if (departmentsResult.error) throw departmentsResult.error;
-  if (managerResult.error) throw managerResult.error;
 
   return {
     municipality: municipalityResult.data as Municipality,
-    latestBudget: budgetResult.data as MunicipalBudgetSummary | null,
-    departmentCount: departmentsResult.count || 0,
-    municipalManager: managerResult.data as unknown as MunicipalOfficial | null,
+    annualBudget: {
+      amount: expenditure.total,
+      financialYear: expenditure.financialYear,
+    },
     issueMetrics: calculateIssueMetrics(issues),
   };
 }

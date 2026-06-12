@@ -160,9 +160,10 @@ export interface MunicipalityIssueMetrics {
 
 export interface MunicipalityOverviewData {
   municipality: Municipality;
-  latestBudget: MunicipalBudgetSummary | null;
-  departmentCount: number;
-  municipalManager: MunicipalOfficial | null;
+  annualBudget: {
+    amount: number;
+    financialYear: string;
+  };
   issueMetrics: MunicipalityIssueMetrics;
 }
 
