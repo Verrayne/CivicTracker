@@ -160,6 +160,8 @@ export function ReportIssuePage() {
               <p className="mb-1.5 text-sm font-semibold text-stone-800">Ward</p>
               <Dropdown
                 ariaLabel="Ward"
+                searchable
+                searchPlaceholder="Type your ward number"
                 value={wardId}
                 onChange={(value) => setValue("wardId", value, { shouldDirty: true, shouldValidate: true })}
                 options={

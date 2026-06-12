@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
-import { ArrowRight, CheckCircle2, ClipboardList, Facebook, Globe, Instagram, Mail, MapPinned, MessageCircle, Send, Users } from "lucide-react";
+import { ArrowRight, Banknote, CheckCircle2, ClipboardList, Facebook, Globe, Instagram, Mail, MapPinned, MessageCircle, PieChart, Send, Users } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/ui/Badge";
@@ -154,6 +154,8 @@ export function HomePage() {
               <Dropdown
                 ariaLabel="Select your ward"
                 variant="dark"
+                searchable
+                searchPlaceholder="Type your ward number"
                 value={selectedWardId}
                 onChange={setSelectedWardId}
                 options={
@@ -192,6 +194,36 @@ export function HomePage() {
                   <Facebook className="h-4 w-4" />
                 </ProfileIcon>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-civic-900/10 bg-civic-950 text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 lg:grid-cols-[1fr_.85fr] lg:px-8">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-civic-300">Make the budget personal</p>
+            <h2 className="mt-3 max-w-2xl font-display text-4xl font-bold">See where your municipal rates actually go</h2>
+            <p className="mt-4 max-w-2xl leading-7 text-civic-200">
+              Turn your monthly rates amount into a simple breakdown of the services and infrastructure your contribution helps fund.
+            </p>
+            <Link
+              to="/municipality/where-your-money-goes"
+              className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold text-civic-950 transition hover:bg-civic-50"
+            >
+              Calculate my contribution <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <Banknote className="h-7 w-7 text-civic-300" />
+              <p className="mt-6 text-sm text-civic-200">Example monthly rates</p>
+              <p className="mt-1 font-display text-3xl font-bold">R2,500</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <PieChart className="h-7 w-7 text-clay" />
+              <p className="mt-6 text-sm text-civic-200">Annual contribution</p>
+              <p className="mt-1 font-display text-3xl font-bold">R30,000</p>
             </div>
           </div>
         </div>

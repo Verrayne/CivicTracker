@@ -254,3 +254,40 @@ export interface CapitalBudgetSummary {
   fundingSources: CapitalFundingFact[];
   sourceUrl: string | null;
 }
+
+export interface BudgetAllocationPercentage {
+  id: string;
+  allocationName: string;
+  percentage: number;
+  sortOrder: number;
+  financialYear: string;
+  sourceNote: string | null;
+}
+
+export interface MunicipalRatesParameters {
+  tariffCentsPerRand: number;
+  valuationReduction: number;
+  financialYear: string;
+  sourceUrl: string | null;
+}
+
+export interface MunicipalImpactEstimate {
+  id: string;
+  insightName: string;
+  unitLabel: string;
+  estimatedCostPerUnit: number;
+  iconName: string;
+  sortOrder: number;
+}
+
+export interface ContributionEstimate {
+  annualContribution: number;
+  monthlyContribution: number;
+}
+
+export interface MoneyGoesData {
+  allocations: BudgetAllocationPercentage[];
+  ratesParameters: MunicipalRatesParameters;
+  impactEstimates: MunicipalImpactEstimate[];
+  municipalityTotalBudget: number;
+}

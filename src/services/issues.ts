@@ -27,7 +27,9 @@ export async function getWards(): Promise<Ward[]> {
     `)
     .order("name");
   if (error) throw error;
-  return data as unknown as Ward[];
+  return (data as unknown as Ward[]).sort((a, b) =>
+    a.name.localeCompare(b.name, "en", { numeric: true, sensitivity: "base" }),
+  );
 }
 
 export async function getMunicipalities(): Promise<Municipality[]> {

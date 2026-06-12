@@ -1,5 +1,5 @@
-import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Check, ChevronDown, Search } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "../../lib/utils";
 
 export interface DropdownOption {
@@ -17,6 +17,8 @@ interface DropdownProps {
   variant?: "light" | "dark";
   align?: "left" | "right";
   className?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 export function Dropdown({
@@ -29,11 +31,18 @@ export function Dropdown({
   variant = "light",
   align = "left",
   className,
+  searchable = false,
+  searchPlaceholder = "Search...",
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
   const selected = options.find((option) => option.value === value);
+  const filteredOptions = useMemo(
+    () => options.filter(({ label }) => label.toLowerCase().includes(search.trim().toLowerCase())),
+    [options, search],
+  );
 
   useEffect(() => {
     function closeOnOutsideClick(event: MouseEvent) {
@@ -61,7 +70,10 @@ export function Dropdown({
         aria-expanded={open}
         aria-controls={listboxId}
         disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          setOpen((current) => !current);
+          setSearch("");
+        }}
         className={cn(
           "flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-left transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60",
           variant === "dark"
@@ -86,7 +98,22 @@ export function Dropdown({
             align === "right" ? "right-0" : "left-0",
           )}
         >
-          {options.map((option) => {
+          {searchable && (
+            <label className="relative mb-1.5 block">
+              <span className="sr-only">{searchPlaceholder}</span>
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-stone-400" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => event.stopPropagation()}
+                placeholder={searchPlaceholder}
+                className="min-h-10 w-full rounded-lg border bg-parchment pl-9 pr-3 text-sm outline-none focus:border-civic-500 focus:ring-2 focus:ring-civic-100"
+              />
+            </label>
+          )}
+          <div className="max-h-72 overflow-y-auto">
+          {filteredOptions.map((option) => {
             const isSelected = option.value === value;
             return (
               <button
@@ -108,6 +135,8 @@ export function Dropdown({
               </button>
             );
           })}
+          {!filteredOptions.length && <p className="px-3 py-5 text-center text-sm text-stone-500">No matching options.</p>}
+          </div>
         </div>
       )}
     </div>

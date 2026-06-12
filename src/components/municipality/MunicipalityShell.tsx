@@ -10,6 +10,7 @@ const tabs = [
   { to: "/municipality/budget-v2", label: "Budget 2.0" },
   { to: "/municipality/management", label: "Management" },
   { to: "/municipality/performance", label: "Performance" },
+  { to: "/municipality/where-your-money-goes", label: "Where Your Money Goes" },
 ];
 
 export function MunicipalityShell({

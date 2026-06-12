@@ -20,6 +20,7 @@ const MunicipalityPerformancePage = lazy(() => import("../pages/municipality/Mun
 const MunicipalityRevenuePage = lazy(() => import("../pages/municipality/budget-v2/MunicipalityRevenuePage").then((module) => ({ default: module.MunicipalityRevenuePage })));
 const MunicipalityExpenditurePage = lazy(() => import("../pages/municipality/budget-v2/MunicipalityExpenditurePage").then((module) => ({ default: module.MunicipalityExpenditurePage })));
 const MunicipalityCapitalPage = lazy(() => import("../pages/municipality/budget-v2/MunicipalityCapitalPage").then((module) => ({ default: module.MunicipalityCapitalPage })));
+const WhereYourMoneyGoesPage = lazy(() => import("../pages/municipality/WhereYourMoneyGoesPage").then((module) => ({ default: module.WhereYourMoneyGoesPage })));
 const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 export function AppRoutes() {
@@ -40,6 +41,7 @@ export function AppRoutes() {
           <Route path="/municipality/budget-v2/capital" element={<MunicipalityCapitalPage />} />
           <Route path="/municipality/management" element={<MunicipalityManagementPage />} />
           <Route path="/municipality/performance" element={<MunicipalityPerformancePage />} />
+          <Route path="/municipality/where-your-money-goes" element={<WhereYourMoneyGoesPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminDashboardPage />} />
